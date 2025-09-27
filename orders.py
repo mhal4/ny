@@ -218,7 +218,7 @@ async def process_comments(message: Message, state: FSMContext):
     data = await state.get_data()
     save_order_to_excel(data)
     await message.answer(f"🎉 Заказ принят! С вами свяжутся в ближайшее время.\n\n"
-                         f"Вы можете также оформить заказ через сайт: http://твой-сайт.render.com")
+                         f"Вы можете также оформить заказ через сайт: http://ny-bvfm.render.com")
     await bot.send_message(
         ADMIN_CHAT_ID,
         f"🔔 НОВЫЙ ЗАКАЗ!\n\n{format_order_for_admin(data)}"
@@ -304,6 +304,8 @@ async def web_app():
     app = web.Application()
     app.router.add_post('/api/order', handle_order)
     app.router.add_get('/download', handle_download)
+    app.router.add_get('/api/check', handle_check_availability)
+    app.router.add_get('/', handle_index)  # ← ✅ ДОБАВЛЕНО!
     return app
 
 # === ЗАПУСК ===
@@ -315,8 +317,8 @@ async def main():
     site = web.TCPSite(runner, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
     await site.start()
 
-    print(f"🌐 Веб-сервер запущен на http://0.0.0.0:8080")
-    print(f"📥 Скачать Excel: http://твой-сайт.onrender.com/download")
+    print(f"🌐 Веб-сервер запущен на https://ny-bvfm.onrender.com")
+    print(f"📥 Скачать Excel: http://ny-bvfm.onrender.com/download")
 
     # Запускаем бота
     await dp.start_polling(bot)
