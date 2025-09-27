@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заказ Деда Мороза</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        input, textarea, select { width: 100%; padding: 8px; margin: 10px 0; }
+        button { background: #e74c3c; color: white; border: none; padding: 10px; cursor: pointer; }
+        .error { color: red; margin: 10px 0; }
+        .suggestions { background: #f0f8ff; padding: 10px; border-left: 4px solid #2196F3; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎄 Заказ Деда Мороза и Снегурочки</h1>
+    <form id="orderForm">
+        <select id="character" required>
+            <option value="">Выберите кого пригласить</option>
+            <option value="Дед Мороз">Дед Мороз</option>
+            <option value="Снегурочка">Снегурочка</option>
+            <option value="Дед Мороз и Снегурочка">Дед Мороз и Снегурочка</option>
+        </select>
+
+        <input type="text" id="date" placeholder="Дата визита (например: 24 декабря 2024)" required>
+        <input type="text" id="time" placeholder="Время (например: 14:00, 15:00, 16:00)" required>
+
+        <div id="error" class="error"></div>
+        <div id="suggestions" class="suggestions" style="display:none;"></div>
+
+        <input type="text" id="address" placeholder="Адрес" required>
+        <input type="number" id="children_count" placeholder="Количество детей" min="1" required>
+        <input type="text" id="child_name" placeholder="Имя ребёнка" required>
+        <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
+        <textarea id="comments" placeholder="Пожелания (необязательно)" rows="3"></textarea>
+
+        <button type="submit">Заказать!</button>
+    </form>
+
+    <p><a href="/download" target="_blank">📥 Скачать список заказов</a></p>
+
+    <script>
+        const form = document.getElementById('orderForm');
+        const errorDiv = document.getElementById('error');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                character: document.getElementById('character').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                address: document.getElementById('address').value,
+                children_count: document.getElementById('children_count').value,
+                child_name: document.getElementById('child_name').value,
+                phone: document.getElementById('phone').value,
+                comments: document.getElementById('comments').value
+            };
+
+            const res = await fetch('/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert('✅ Заказ принят!');
+                form.reset();
+                errorDiv.style.display = 'none';
+                suggestionsDiv.style.display = 'none';
+            } else {
+                const result = await res.json();
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = result.error;
+
+                if (result.available && result.available.length > 0) {
+                    suggestionsDiv.style.display = 'block';
+                    suggestionsDiv.innerHTML = '<strong>Доступны другие даты:</strong><br>' +
+                        result.available.map(d => `• ${d}`).join('<br>');
+                }
+            }
+        });
+
+        document.getElementById('date').addEventListener('blur', checkAvailability);
+        document.getElementById('time').addEventListener('blur', checkAvailability);
+
+        async function checkAvailability() {
+            const date = document.getElementById('date').value.trim();
+            const time = document.getElementById('time').value.trim();
+            if (!date || !time) return;
+
+            const res = await fetch(`/api/check?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`);
+            const result = await res.json();
+
+            if (result.available === false) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = '❌ Это время занято!';
+                if (result.suggestions && result.suggestions.length > 0) {
+                    suggestionsDiv.style.display = 'block';
+                    suggestionsDiv.innerHTML = '<strong>Доступны другие варианты:</strong><br>' +
+                        result.suggestions.map(d => `• ${d}`).join('<br>');
+                }
+            } else {
+                errorDiv.style.display = 'none';
+                suggestionsDiv.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
