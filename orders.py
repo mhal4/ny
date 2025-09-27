@@ -300,6 +300,9 @@ async def handle_order(request):
 async def handle_download(request):
     return web.FileResponse(EXCEL_FILE)
 
+async def handle_index(request):
+    return web.FileResponse('/opt/render/project/src/index.html')
+
 async def web_app():
     app = web.Application()
     app.router.add_post('/api/order', handle_order)
