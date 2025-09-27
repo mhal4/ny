@@ -303,6 +303,23 @@ async def handle_download(request):
 async def handle_index(request):
     return web.FileResponse('/opt/render/project/src/index.html')
 
+async def handle_check_availability(request):
+    date = request.query.get('date', '')
+    time = request.query.get('time', '')
+    if not date or not time:
+        return web.json_response({"error": "Нет даты или времени"}, status=400)
+
+    available = is_slot_available(date, time)
+    suggestions = []
+    if not available:
+        suggestions = find_next_available_slots(date)
+
+    return web.json_response({
+        "available": available,
+        "suggestions": suggestions
+    })
+
+
 async def web_app():
     app = web.Application()
     app.router.add_post('/api/order', handle_order)
