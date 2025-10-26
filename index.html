@@ -2,104 +2,262 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Заказ Деда Мороза</title>
+    <title>Заказ Деда Мороза и Снегурочки</title>
     <style>
-        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
-        input, textarea, select { width: 100%; padding: 8px; margin: 10px 0; }
-        button { background: #e74c3c; color: white; border: none; padding: 10px; cursor: pointer; }
-        .error { color: red; margin: 10px 0; }
-        .suggestions { background: #f0f8ff; padding: 10px; border-left: 4px solid #2196F3; margin: 10px 0; }
+        body {
+            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+            background: linear-gradient(135deg, #003f8a, #d4af37);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #d4af37;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+        button {
+            background: #d4af37;
+            color: #003f8a;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #f0c450;
+            transform: scale(1.05);
+        }
+        .price-display {
+            font-size: 1.5em;
+            color: #d4af37;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .character-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px;
+            border: 3px solid #d4af37;
+        }
+        .error { color: #ff6b6b; margin: 10px 0; }
+        .suggestions { background: rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 8px; margin: 10px 0; }
+        .payment-section {
+            background: rgba(0, 63, 138, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
-    <h1>🎄 Заказ Деда Мороза и Снегурочки</h1>
-    <form id="orderForm">
-        <select id="character" required>
-            <option value="">Выберите кого пригласить</option>
-            <option value="Дед Мороз">Дед Мороз</option>
-            <option value="Снегурочка">Снегурочка</option>
-            <option value="Дед Мороз и Снегурочка">Дед Мороз и Снегурочка</option>
-        </select>
+    <div class="container">
+        <h1>🎄 Закажи Деда Мороза и Снегурочку!</h1>
 
-        <input type="text" id="date" placeholder="Дата визита (например: 24 декабря 2024)" required>
-        <input type="text" id="time" placeholder="Время (например: 14:00, 15:00, 16:00)" required>
+        <!-- Шаг 1: Выбор города -->
+        <div class="step active" id="step1">
+            <h2>В каком городе?</h2>
+            <select id="city" required>
+                <option value="">Выберите город</option>
+                <option value="Москва">Москва (до 50 пар)</option>
+                <option value="СПб">Санкт-Петербург (до 27 пар)</option>
+            </select>
+            <button onclick="nextStep(2)">Далее</button>
+        </div>
 
-        <div id="error" class="error"></div>
-        <div id="suggestions" class="suggestions" style="display:none;"></div>
+        <!-- Шаг 2: Дата и время -->
+        <div class="step" id="step2">
+            <h2>Когда?</h2>
+            <input type="text" id="date" placeholder="Например: 24 декабря 2024" required>
+            <input type="text" id="time" placeholder="Например: 14:00, 15:00, 16:00" required>
+            <div id="priceDisplay" class="price-display">Цена: —</div>
+            <div id="error" class="error"></div>
+            <div id="suggestions" class="suggestions" style="display:none;"></div>
+            <button onclick="prevStep(1)">Назад</button>
+            <button onclick="nextStep(3)">Далее</button>
+        </div>
 
-        <input type="text" id="address" placeholder="Адрес" required>
-        <input type="number" id="children_count" placeholder="Количество детей" min="1" required>
-        <input type="text" id="child_name" placeholder="Имя ребёнка" required>
-        <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
-        <textarea id="comments" placeholder="Пожелания (необязательно)" rows="3"></textarea>
+        <!-- Шаг 3: Тип программы -->
+        <div class="step" id="step3">
+            <h2>Выберите программу</h2>
+            <div>
+                <label>
+                    <input type="radio" name="program" value="Экспресс (15 мин)"> <strong>Экспресс (15 мин)</strong> — описание будет позже
+                </label><br>
+                <label>
+                    <input type="radio" name="program" value="Классическая (30 мин)"> <strong>Классическая (30 мин)</strong> — описание будет позже
+                </label>
+            </div>
+            <button onclick="prevStep(2)">Назад</button>
+            <button onclick="nextStep(4)">Далее</button>
+        </div>
 
-        <button type="submit">Заказать!</button>
-    </form>
+        <!-- Шаг 4: Адрес и дети -->
+        <div class="step" id="step4">
+            <h2>Где?</h2>
+            <input type="text" id="address" placeholder="Полный адрес" required>
+            <input type="number" id="children_count" placeholder="Количество детей" min="1" required>
+            <input type="text" id="child_name" placeholder="Имя ребёнка" required>
+            <button onclick="prevStep(3)">Назад</button>
+            <button onclick="nextStep(5)">Далее</button>
+        </div>
+
+        <!-- Шаг 5: Контакт и пожелания -->
+        <div class="step" id="step5">
+            <h2>Контакт и пожелания</h2>
+            <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
+            <textarea id="comments" placeholder="Пожелания (необязательно)" rows="3"></textarea>
+            <button onclick="prevStep(4)">Назад</button>
+            <button onclick="sendOrder()">Оплатить</button>
+        </div>
+
+        <!-- Шаг 6: Страница оплаты -->
+        <div class="step" id="step6">
+            <h2>Оплата заказа</h2>
+            <div id="orderSummary"></div>
+            <div class="payment-section">
+                <p>Для оплаты нажмите кнопку ниже:</p>
+                <button onclick="proceedToPayment()">💳 Оплатить через ЮMoney (заглушка)</button>
+                <p style="font-size: 0.9em; color: #ccc; margin-top: 10px;">
+                    После оплаты вы будете перенаправлены на страницу подтверждения.
+                </p>
+            </div>
+            <button onclick="prevStep(5)">Назад</button>
+        </div>
+
+        <!-- Шаг 7: Подтверждение оплаты -->
+        <div class="step" id="step7">
+            <h2>Оплата прошла успешно!</h2>
+            <p>Ваш заказ принят и записан в систему.</p>
+            <button onclick="location.reload()">Сделать новый заказ</button>
+        </div>
+
+        <p><a href="/download" target="_blank" style="color:#d4af37;">📥 Скачать список заказов</a></p>
+    </div>
 
     <script>
-        const form = document.getElementById('orderForm');
-        const errorDiv = document.getElementById('error');
-        const suggestionsDiv = document.getElementById('suggestions');
+        let currentOrder = {};
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function nextStep(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        function prevStep(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        document.getElementById('date').addEventListener('input', updatePrice);
+        document.getElementById('time').addEventListener('input', updatePrice);
+
+        async function updatePrice() {
+            const date = document.getElementById('date').value.trim();
+            const time = document.getElementById('time').value.trim();
+            const program = document.querySelector('input[name="program"]:checked');
+            if (!date || !time || !program) return;
+
+            const res = await fetch(`/api/price?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&program_type=${encodeURIComponent(program.value)}`);
+            const data = await res.json();
+            document.getElementById('priceDisplay').textContent = `Цена: ${data.price || '—'} ₽`;
+        }
+
+        async function sendOrder() {
             const data = {
-                character: document.getElementById('character').value,
+                city: document.getElementById('city').value,
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
+                program_type: document.querySelector('input[name="program"]:checked').value,
                 address: document.getElementById('address').value,
                 children_count: document.getElementById('children_count').value,
                 child_name: document.getElementById('child_name').value,
                 phone: document.getElementById('phone').value,
-                comments: document.getElementById('comments').value
+                comments: document.getElementById('comments').value,
+                price: parseFloat(document.getElementById('priceDisplay').textContent.replace('Цена: ', '').replace(' ₽', '')) || 0
             };
 
-            const res = await fetch('/api/order', {
+            const res = await fetch('/api/temp_order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
 
             if (res.ok) {
-                alert('✅ Заказ принят!');
-                form.reset();
-                errorDiv.style.display = 'none';
-                suggestionsDiv.style.display = 'none';
+                const result = await res.json();
+                currentOrder.order_id = result.order_id;
+
+                document.getElementById('orderSummary').innerHTML = `
+                    <p><strong>Кого:</strong> Дед Мороз и Снегурочка</p>
+                    <p><strong>Город:</strong> ${data.city}</p>
+                    <p><strong>Дата:</strong> ${data.date} в ${data.time}</p>
+                    <p><strong>Программа:</strong> ${data.program_type}</p>
+                    <p><strong>Цена:</strong> ${data.price} ₽</p>
+                    <p><strong>Адрес:</strong> ${data.address}</p>
+                    <p><strong>Детей:</strong> ${data.children_count}</p>
+                    <p><strong>Имя ребёнка:</strong> ${data.child_name}</p>
+                `;
+
+                nextStep(6);
             } else {
                 const result = await res.json();
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = result.error;
-
-                if (result.available && result.available.length > 0) {
-                    suggestionsDiv.style.display = 'block';
-                    suggestionsDiv.innerHTML = '<strong>Доступны другие даты:</strong><br>' +
-                        result.available.map(d => `• ${d}`).join('<br>');
-                }
+                alert('❌ Ошибка: ' + result.error);
             }
-        });
+        }
 
-        document.getElementById('date').addEventListener('blur', checkAvailability);
-        document.getElementById('time').addEventListener('blur', checkAvailability);
+        function proceedToPayment() {
+            // Заглушка — открываем внешнюю ссылку
+            // В реальности: открываем ЮMoney или другой сервис
+            // После оплаты — пользователь возвращается сюда и вызывает confirmOrderFromTemp
+            alert("Переход на страницу оплаты (заглушка). В реальности откроется ЮMoney.");
+            // window.open('https://yoomoney.ru/...', '_blank'); // Реальный вызов
+            // После возврата — вызвать confirmOrderFromTemp(order_id)
+            setTimeout(() => {
+                confirmOrderFromTemp(currentOrder.order_id);
+            }, 1000); // Симуляция
+        }
 
-        async function checkAvailability() {
-            const date = document.getElementById('date').value.trim();
-            const time = document.getElementById('time').value.trim();
-            if (!date || !time) return;
+        async function confirmOrderFromTemp(order_id) {
+            const res = await fetch('/api/confirm_order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: order_id })
+            });
 
-            const res = await fetch(`/api/check?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`);
-            const result = await res.json();
-
-            if (result.available === false) {
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = '❌ Это время занято!';
-                if (result.suggestions && result.suggestions.length > 0) {
-                    suggestionsDiv.style.display = 'block';
-                    suggestionsDiv.innerHTML = '<strong>Доступны другие варианты:</strong><br>' +
-                        result.suggestions.map(d => `• ${d}`).join('<br>');
-                }
+            if (res.ok) {
+                nextStep(7);
             } else {
-                errorDiv.style.display = 'none';
-                suggestionsDiv.style.display = 'none';
+                const result = await res.json();
+                alert('❌ Ошибка подтверждения: ' + result.error);
             }
         }
     </script>
