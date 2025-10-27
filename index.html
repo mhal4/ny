@@ -5,13 +5,13 @@
     <title>Заказ Деда Мороза и Снегурочки</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* === СНЕЖНЫЙ АНИМИРОВАННЫЙ ФОН === */
+        /* === ГОЛУБОЙ ФОН И ЗЕЛЁНЫЕ АКЦЕНТЫ === */
         body {
             margin: 0;
             padding: 0;
             font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-            background: linear-gradient(135deg, #003f8a, #0a1a3a);
-            color: white;
+            background: linear-gradient(135deg, #87CEEB, #B0E2FF); /* LightSkyBlue → LightBlue */
+            color: #2F4F4F; /* DarkSlateGray */
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
@@ -33,37 +33,58 @@
             }
         }
 
-        .container {
+        /* === СУГРОБЫ ВНИЗУ === */
+        .snowdrift {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to top, #ffffff, #f0f8ff);
+            z-index: 5;
+            border-top-left-radius: 50% 30px;
+            border-top-right-radius: 50% 30px;
+            box-shadow: 0 -5px 20px rgba(255, 255, 255, 0.5);
+        }
+
+        /* === КОНТЕЙНЕР ФОРМЫ НА СУГРОБАХ === */
+        .form-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 30px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 30px rgba(47, 79, 79, 0.3);
             position: relative;
             z-index: 10;
+            margin-bottom: 100px; /* Отступ от сугробов */
+            color: #2F4F4F;
         }
 
         h1 {
             font-size: 2.5em;
             margin-bottom: 20px;
-            color: #d4af37;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: #32CD32; /* LimeGreen */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
         h2 {
-            color: #d4af37;
-            border-bottom: 2px solid #d4af37;
+            color: #228B22; /* ForestGreen */
+            border-bottom: 2px solid #32CD32;
             padding-bottom: 10px;
         }
 
+        h3 {
+            color: #228B22;
+        }
+
         .tariff-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(240, 248, 255, 0.9); /* AliceBlue */
             padding: 20px;
             margin: 15px 0;
             border-radius: 10px;
-            border-left: 4px solid #d4af37;
+            border-left: 4px solid #32CD32; /* LimeGreen */
         }
 
         .step {
@@ -79,15 +100,15 @@
             padding: 12px;
             margin: 10px 0;
             border-radius: 8px;
-            border: none;
+            border: 1px solid #32CD32; /* LimeGreen */
             font-size: 16px;
             background: rgba(255, 255, 255, 0.9);
-            color: #003f8a;
+            color: #2F4F4F;
         }
 
         button {
-            background: #d4af37;
-            color: #003f8a;
+            background: #32CD32; /* LimeGreen */
+            color: white;
             border: none;
             padding: 15px 30px;
             font-size: 18px;
@@ -99,26 +120,26 @@
         }
 
         button:hover {
-            background: #f0c450;
+            background: #228B22; /* ForestGreen */
             transform: scale(1.05);
         }
 
         .price-display {
             font-size: 1.5em;
-            color: #d4af37;
+            color: #228B22; /* ForestGreen */
             margin: 15px 0;
             font-weight: bold;
             text-align: center;
         }
 
         .error {
-            color: #ff6b6b;
+            color: #CD5C5C; /* IndianRed */
             margin: 10px 0;
             text-align: center;
         }
 
         .suggestions {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(173, 216, 230, 0.5); /* LightBlue */
             padding: 10px;
             border-radius: 8px;
             margin: 10px 0;
@@ -126,18 +147,20 @@
         }
 
         .payment-section {
-            background: rgba(0, 63, 138, 0.6);
+            background: rgba(240, 248, 255, 0.8); /* AliceBlue */
             padding: 20px;
             border-radius: 10px;
             margin: 20px 0;
             text-align: center;
+            border: 1px solid #32CD32;
         }
 
         /* === АДАПТИВНОСТЬ === */
         @media (max-width: 768px) {
-            .container {
+            .form-container {
                 padding: 15px;
                 margin: 10px;
+                margin-bottom: 150px; /* Больше отступа на мобильных */
             }
 
             h1 {
@@ -171,7 +194,7 @@
     <!-- Снежинки -->
     <div id="snowflakes"></div>
 
-    <div class="container">
+    <div class="form-container">
         <h1>🎄 Закажи Деда Мороза и Снегурочку!</h1>
 
         <!-- === ОПИСАНИЕ ТАРИФОВ === -->
@@ -194,10 +217,12 @@
             </div>
         </div>
 
+        <!-- === РАЗДЕЛЯЮЩИЙ ОТСТУП === -->
+        <div style="height: 30px;"></div>
+
         <!-- === ФОРМА ЗАКАЗА === -->
         <div id="orderForm">
-
-            <!-- Шаг 1: Выбор города -->
+            <!-- (остальная форма без изменений) -->
             <div class="step active" id="step1">
                 <h2>В каком городе?</h2>
                 <select id="city" required>
@@ -208,7 +233,6 @@
                 <button onclick="nextStep(2)">Далее</button>
             </div>
 
-            <!-- Шаг 2: Дата и время -->
             <div class="step" id="step2">
                 <h2>Когда?</h2>
                 <input type="text" id="date" placeholder="Например: 25 декабря 2025" required>
@@ -220,7 +244,6 @@
                 <button onclick="nextStep(3)">Далее</button>
             </div>
 
-            <!-- Шаг 3: Тип программы -->
             <div class="step" id="step3">
                 <h2>Выберите программу</h2>
                 <div>
@@ -238,7 +261,6 @@
                 <button onclick="nextStep(4)">Далее</button>
             </div>
 
-            <!-- Шаг 4: Адрес и дети -->
             <div class="step" id="step4">
                 <h2>Где?</h2>
                 <input type="text" id="address" placeholder="Полный адрес" required>
@@ -248,7 +270,6 @@
                 <button onclick="nextStep(5)">Далее</button>
             </div>
 
-            <!-- Шаг 5: Контакт и пожелания -->
             <div class="step" id="step5">
                 <h2>Контакт и пожелания</h2>
                 <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
@@ -257,21 +278,19 @@
                 <button onclick="sendOrder()">Оплатить</button>
             </div>
 
-            <!-- Шаг 6: Страница оплаты -->
             <div class="step" id="step6">
                 <h2>Оплата заказа</h2>
                 <div id="orderSummary"></div>
                 <div class="payment-section">
                     <p>Для оплаты нажмите кнопку ниже:</p>
                     <button onclick="proceedToPayment()">💳 Оплатить через ЮMoney (заглушка)</button>
-                    <p style="font-size: 0.9em; color: #ccc; margin-top: 10px;">
+                    <p style="font-size: 0.9em; color: #2F4F4F; margin-top: 10px;">
                         После оплаты вы будете перенаправлены на страницу подтверждения.
                     </p>
                 </div>
                 <button onclick="prevStep(5)">Назад</button>
             </div>
 
-            <!-- Шаг 7: Подтверждение оплаты -->
             <div class="step" id="step7">
                 <h2>Оплата прошла успешно!</h2>
                 <p>Ваш заказ принят и записан в систему.</p>
@@ -279,8 +298,11 @@
             </div>
         </div>
 
-        <p><a href="/download" target="_blank" style="color:#d4af37;">📥 Скачать список заказов</a></p>
+        <p><a href="/download" target="_blank" style="color:#228B22;">📥 Скачать список заказов</a></p>
     </div>
+
+    <!-- === СУГРОБЫ === -->
+    <div class="snowdrift"></div>
 
     <script>
         // === СНЕЖИНКИ ===
