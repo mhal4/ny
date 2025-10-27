@@ -27,7 +27,7 @@ TEMP_ORDERS_FILE = "temp_orders.json"  # Временные заказы до о
 
 # === МАКСИМАЛЬНОЕ КОЛ-ВО ПАР ПО ГОРОДАМ ===
 CITIES = {"Москва": 50, "СПб": 27}
-
+sale = 0.7 if datetime.now() < datetime(2025, 12, 1) else 1
 # === ИНИЦИАЛИЗАЦИЯ ===
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -157,9 +157,6 @@ def find_next_available_slots(start_date_str, city):
     return available
 
 
-# ... (все предыдущие импорты и конфиг)
-
-
 # === ОБНОВЛЁННАЯ ФУНКЦИЯ РАСЧЁТА ЦЕНЫ ===
 def get_price(date_str, time_str, program_type):
     """
@@ -179,101 +176,89 @@ def get_price(date_str, time_str, program_type):
         # Цены для Экспресса (10 мин) — условно из фото
         if program_type == "Экспресс (10 мин)":
             if dt < datetime(2025, 12, 25):
-                return 5000  # или другая цена
+                return 5600 * sale  # или другая цена
             elif dt <= datetime(2025, 12, 27):
-                return 5800
+                return 6400 * sale
             elif dt == datetime(2025, 12, 28):
-                return 6500
+                return 7000 * sale
             elif dt == datetime(2025, 12, 29):
-                return 5200
+                return 5475 * sale
             elif dt == datetime(2025, 12, 30):
-                return 4900
+                return 5175 * sale
             elif dt == datetime(2025, 12, 31):
                 hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
-                    return 7200
+                    return 7700 * sale
                 elif 14 <= hour < 16:
-                    return 7600
+                    return 8150 * sale
                 elif 16 <= hour < 19:
-                    return 11000
+                    return 11975 * sale
                 elif 19 <= hour < 21:
-                    return 12800
+                    return 13800 * sale
                 elif 21 <= hour < 23:
-                    return 13900
-                elif 23 <= hour or hour < 1:
-                    return 24000
+                    return 13900 * sale
+                elif 23 <= hour:
+                    return 25200 * sale
             elif dt.month == 1 and dt.day in [1, 2]:
-                return 6500
+                if dt.day == 1 and dt.hour <= 1:
+                    return 25200 * sale
+                return 7000 * sale
             elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 5000
+                return 5600 * sale
             else:
-                return 5000
+                return 5000 * sale
 
         # Цены для Стандарта (30 мин) — как "классика" из текста
         elif program_type == "Стандарт (30 мин)":
             if dt < datetime(2025, 12, 25):
-                return 7000
+                return 7400 * sale
             elif dt <= datetime(2025, 12, 27):
-                return 7600
+                return 8000 * sale
             elif dt == datetime(2025, 12, 28):
-                return 8000
+                return 8000 * sale
             elif dt == datetime(2025, 12, 29):
-                return 6200
+                return 6525 * sale
             elif dt == datetime(2025, 12, 30):
-                return 5800
+                return 6150 * sale
             elif dt == datetime(2025, 12, 31):
                 hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
-                    return 8200
+                    return 8675 * sale
                 elif 14 <= hour < 16:
-                    return 8600
+                    return 9050 * sale
                 elif 16 <= hour < 19:
-                    return 12600
+                    return 13400 * sale
                 elif 19 <= hour < 21:
-                    return 14200
+                    return 15150 * sale
                 elif 21 <= hour < 23:
-                    return 15200
+                    return 16050 * sale
                 elif 23 <= hour or hour < 1:
-                    return 25000
+                    return 26250 * sale
             elif dt.month == 1 and dt.day in [1, 2]:
-                return 8000
+                if dt.hour <= 1:
+                    return 26250 * sale
+                return 8500 * sale
             elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 7000
+                return 7400 * sale
             else:
-                return 7000
+                return 7000 * sale
 
         # Цены для Расширенного (1 час) — условно выше
         elif program_type == "Расширенный (1 час)":
-            if dt < datetime(2025, 12, 25):
-                return 12000
-            elif dt <= datetime(2025, 12, 27):
-                return 13000
-            elif dt == datetime(2025, 12, 28):
-                return 14000
-            elif dt == datetime(2025, 12, 29):
-                return 11000
-            elif dt == datetime(2025, 12, 30):
-                return 10000
+            if dt <= datetime(2025, 12, 28):
+                return 17000 * sale
+            elif dt <= datetime(2025, 12, 30):
+                return 22500 * sale
             elif dt == datetime(2025, 12, 31):
-                hour = int(time_str.split(":")[0])
-                if 9 <= hour < 14:
-                    return 15000
-                elif 14 <= hour < 16:
-                    return 16000
-                elif 16 <= hour < 19:
-                    return 20000
-                elif 19 <= hour < 21:
-                    return 22000
-                elif 21 <= hour < 23:
-                    return 24000
-                elif 23 <= hour or hour < 1:
-                    return 35000
-            elif dt.month == 1 and dt.day in [1, 2]:
-                return 14000
-            elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 12000
-            else:
-                return 12000
+                return 50000 * sale
+            elif dt.month == 1 and dt.day in [1, 3]:
+                if dt.hour <= 3:
+                    return 150000 * sale
+                elif dt.hour <= 6:
+                    return 90000 * sale
+                return 16000 * sale
+            elif dt.month == 1 and 4 <= dt.day <= 7:
+                return 12000 * sale
 
     except Exception as e:
         print(f"Ошибка в get_price: {e}")
