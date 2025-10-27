@@ -157,12 +157,16 @@ def find_next_available_slots(start_date_str, city):
     return available
 
 
-# === РАСЧЁТ ЦЕНЫ ===
+# ... (все предыдущие импорты и конфиг)
+
+
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ РАСЧЁТА ЦЕНЫ ===
 def get_price(date_str, time_str, program_type):
     """
     Возвращает цену по дате, времени и типу программы
-    - Экспресс (15 мин) — цены из фото
-    - Классика (30 мин) — цены из текста заказчика
+    - Экспресс (10 мин) — цены из фото (условно)
+    - Стандарт (30 мин) — цены из текста (условно)
+    - Расширенный (1 час) — цены из текста (условно)
     """
     from datetime import datetime
 
@@ -172,71 +176,104 @@ def get_price(date_str, time_str, program_type):
         else:
             dt = datetime.strptime(date_str, "%d %B %Y")
 
-        # Цены для Экспресса (из фото)
-        if program_type == "Экспресс (15 мин)":
-            if dt < datetime(2024, 12, 23):
-                return 5600
-            elif dt <= datetime(2024, 12, 27):
-                return 6400
-            elif dt == datetime(2024, 12, 28):
-                return 7000
-            elif dt == datetime(2024, 12, 29):
-                return 5475
-            elif dt == datetime(2024, 12, 30):
-                return 5175
-            elif dt == datetime(2024, 12, 31):
+        # Цены для Экспресса (10 мин) — условно из фото
+        if program_type == "Экспресс (10 мин)":
+            if dt < datetime(2025, 12, 25):
+                return 5000  # или другая цена
+            elif dt <= datetime(2025, 12, 27):
+                return 5800
+            elif dt == datetime(2025, 12, 28):
+                return 6500
+            elif dt == datetime(2025, 12, 29):
+                return 5200
+            elif dt == datetime(2025, 12, 30):
+                return 4900
+            elif dt == datetime(2025, 12, 31):
                 hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
-                    return 7700
+                    return 7200
                 elif 14 <= hour < 16:
-                    return 8150
+                    return 7600
                 elif 16 <= hour < 19:
-                    return 11975
+                    return 11000
                 elif 19 <= hour < 21:
-                    return 13800
+                    return 12800
                 elif 21 <= hour < 23:
-                    return 14925
+                    return 13900
                 elif 23 <= hour or hour < 1:
-                    return 25200
+                    return 24000
             elif dt.month == 1 and dt.day in [1, 2]:
-                return 7000
+                return 6500
             elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 5600
+                return 5000
             else:
-                return 5600
+                return 5000
 
-        # Цены для Классики (из текста заказчика)
-        else:  # "Классическая (30 мин)"
-            if dt < datetime(2024, 12, 23):
-                return 7400
-            elif dt <= datetime(2024, 12, 27):
+        # Цены для Стандарта (30 мин) — как "классика" из текста
+        elif program_type == "Стандарт (30 мин)":
+            if dt < datetime(2025, 12, 25):
+                return 7000
+            elif dt <= datetime(2025, 12, 27):
+                return 7600
+            elif dt == datetime(2025, 12, 28):
                 return 8000
-            elif dt == datetime(2024, 12, 28):
-                return 8400
-            elif dt == datetime(2024, 12, 29):
-                return 6525
-            elif dt == datetime(2024, 12, 30):
-                return 6150
-            elif dt == datetime(2024, 12, 31):
+            elif dt == datetime(2025, 12, 29):
+                return 6200
+            elif dt == datetime(2025, 12, 30):
+                return 5800
+            elif dt == datetime(2025, 12, 31):
                 hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
-                    return 8675
+                    return 8200
                 elif 14 <= hour < 16:
-                    return 9050
+                    return 8600
                 elif 16 <= hour < 19:
-                    return 13400
+                    return 12600
                 elif 19 <= hour < 21:
-                    return 15150
+                    return 14200
                 elif 21 <= hour < 23:
-                    return 16050
+                    return 15200
                 elif 23 <= hour or hour < 1:
-                    return 26250
+                    return 25000
             elif dt.month == 1 and dt.day in [1, 2]:
-                return 8500
+                return 8000
             elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 7400
+                return 7000
             else:
-                return 7400
+                return 7000
+
+        # Цены для Расширенного (1 час) — условно выше
+        elif program_type == "Расширенный (1 час)":
+            if dt < datetime(2025, 12, 25):
+                return 12000
+            elif dt <= datetime(2025, 12, 27):
+                return 13000
+            elif dt == datetime(2025, 12, 28):
+                return 14000
+            elif dt == datetime(2025, 12, 29):
+                return 11000
+            elif dt == datetime(2025, 12, 30):
+                return 10000
+            elif dt == datetime(2025, 12, 31):
+                hour = int(time_str.split(":")[0])
+                if 9 <= hour < 14:
+                    return 15000
+                elif 14 <= hour < 16:
+                    return 16000
+                elif 16 <= hour < 19:
+                    return 20000
+                elif 19 <= hour < 21:
+                    return 22000
+                elif 21 <= hour < 23:
+                    return 24000
+                elif 23 <= hour or hour < 1:
+                    return 35000
+            elif dt.month == 1 and dt.day in [1, 2]:
+                return 14000
+            elif dt.month == 1 and 3 <= dt.day <= 7:
+                return 12000
+            else:
+                return 12000
 
     except Exception as e:
         print(f"Ошибка в get_price: {e}")
@@ -255,14 +292,19 @@ def get_cities_keyboard():
     return kb.as_markup()
 
 
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ДАТ ===
 def get_dates_keyboard():
     """
-    Клавиатура с датами на 14 дней вперёд
+    Клавиатура с датами с 25.12.2025 по 07.01.2026
     """
     kb = InlineKeyboardBuilder()
-    for i in range(14):
-        day = (datetime.now() + timedelta(days=i)).strftime("%d %B %Y")
+    start_date = datetime(2025, 12, 25)
+    end_date = datetime(2026, 1, 7)
+    current = start_date
+    while current <= end_date:
+        day = current.strftime("%d %B %Y")
         kb.button(text=day, callback_data=f"date_{day}")
+        current += timedelta(days=1)
     kb.adjust(2)
     return kb.as_markup()
 

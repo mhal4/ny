@@ -3,36 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <title>Заказ Деда Мороза и Снегурочки</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* === СНЕЖНЫЙ АНИМИРОВАННЫЙ ФОН === */
         body {
-            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-            background: linear-gradient(135deg, #003f8a, #d4af37);
-            color: white;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+            background: linear-gradient(135deg, #003f8a, #0a1a3a);
+            color: white;
             min-height: 100vh;
-            text-align: center;
+            overflow-x: hidden;
+            position: relative;
         }
+
+        /* Снежинки */
+        .snowflake {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.8;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
-            background: rgba(0, 0, 0, 0.5);
             padding: 30px;
+            background: rgba(0, 0, 0, 0.6);
             border-radius: 15px;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+            position: relative;
+            z-index: 10;
         }
+
         h1 {
             font-size: 2.5em;
             margin-bottom: 20px;
             color: #d4af37;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
+
+        h2 {
+            color: #d4af37;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 10px;
+        }
+
+        .tariff-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #d4af37;
+        }
+
         .step {
             display: none;
         }
+
         .step.active {
             display: block;
         }
+
         input, select, textarea {
             width: 100%;
             padding: 12px;
@@ -40,7 +81,10 @@
             border-radius: 8px;
             border: none;
             font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #003f8a;
         }
+
         button {
             background: #d4af37;
             color: #003f8a;
@@ -49,125 +93,214 @@
             font-size: 18px;
             border-radius: 50px;
             cursor: pointer;
-            margin: 10px;
+            margin: 10px 5px;
             transition: all 0.3s;
+            display: inline-block;
         }
+
         button:hover {
             background: #f0c450;
             transform: scale(1.05);
         }
+
         .price-display {
             font-size: 1.5em;
             color: #d4af37;
             margin: 15px 0;
             font-weight: bold;
+            text-align: center;
         }
-        .character-img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin: 10px;
-            border: 3px solid #d4af37;
+
+        .error {
+            color: #ff6b6b;
+            margin: 10px 0;
+            text-align: center;
         }
-        .error { color: #ff6b6b; margin: 10px 0; }
-        .suggestions { background: rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 8px; margin: 10px 0; }
+
+        .suggestions {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
         .payment-section {
             background: rgba(0, 63, 138, 0.6);
             padding: 20px;
             border-radius: 10px;
             margin: 20px 0;
+            text-align: center;
+        }
+
+        /* === АДАПТИВНОСТЬ === */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 16px;
+                width: 100%;
+                margin: 10px 0;
+            }
+
+            .tariff-card {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .price-display {
+                font-size: 1.3em;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Снежинки -->
+    <div id="snowflakes"></div>
+
     <div class="container">
         <h1>🎄 Закажи Деда Мороза и Снегурочку!</h1>
 
-        <!-- Шаг 1: Выбор города -->
-        <div class="step active" id="step1">
-            <h2>В каком городе?</h2>
-            <select id="city" required>
-                <option value="">Выберите город</option>
-                <option value="Москва">Москва (до 50 пар)</option>
-                <option value="СПб">Санкт-Петербург (до 27 пар)</option>
-            </select>
-            <button onclick="nextStep(2)">Далее</button>
-        </div>
-
-        <!-- Шаг 2: Дата и время -->
-        <div class="step" id="step2">
-            <h2>Когда?</h2>
-            <input type="text" id="date" placeholder="Например: 24 декабря 2024" required>
-            <input type="text" id="time" placeholder="Например: 14:00, 15:00, 16:00" required>
-            <div id="priceDisplay" class="price-display">Цена: —</div>
-            <div id="error" class="error"></div>
-            <div id="suggestions" class="suggestions" style="display:none;"></div>
-            <button onclick="prevStep(1)">Назад</button>
-            <button onclick="nextStep(3)">Далее</button>
-        </div>
-
-        <!-- Шаг 3: Тип программы -->
-        <div class="step" id="step3">
-            <h2>Выберите программу</h2>
-            <div>
-                <label>
-                    <input type="radio" name="program" value="Экспресс (15 мин)"> <strong>Экспресс (15 мин)</strong> — описание будет позже
-                </label><br>
-                <label>
-                    <input type="radio" name="program" value="Классическая (30 мин)"> <strong>Классическая (30 мин)</strong> — описание будет позже
-                </label>
+        <!-- === ОПИСАНИЕ ТАРИФОВ === -->
+        <div id="tariffs">
+            <h2>Тарифы</h2>
+            <div class="tariff-card">
+                <h3>Экспресс (10 минут)</h3>
+                <p>Краткое поздравление: стихотворение, бенгальские огни, хоровод, песенка про Новый год.</p>
+                <p><strong>Идеально для небольших мероприятий</strong></p>
             </div>
-            <button onclick="prevStep(2)">Назад</button>
-            <button onclick="nextStep(4)">Далее</button>
-        </div>
-
-        <!-- Шаг 4: Адрес и дети -->
-        <div class="step" id="step4">
-            <h2>Где?</h2>
-            <input type="text" id="address" placeholder="Полный адрес" required>
-            <input type="number" id="children_count" placeholder="Количество детей" min="1" required>
-            <input type="text" id="child_name" placeholder="Имя ребёнка" required>
-            <button onclick="prevStep(3)">Назад</button>
-            <button onclick="nextStep(5)">Далее</button>
-        </div>
-
-        <!-- Шаг 5: Контакт и пожелания -->
-        <div class="step" id="step5">
-            <h2>Контакт и пожелания</h2>
-            <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
-            <textarea id="comments" placeholder="Пожелания (необязательно)" rows="3"></textarea>
-            <button onclick="prevStep(4)">Назад</button>
-            <button onclick="sendOrder()">Оплатить</button>
-        </div>
-
-        <!-- Шаг 6: Страница оплаты -->
-        <div class="step" id="step6">
-            <h2>Оплата заказа</h2>
-            <div id="orderSummary"></div>
-            <div class="payment-section">
-                <p>Для оплаты нажмите кнопку ниже:</p>
-                <button onclick="proceedToPayment()">💳 Оплатить через ЮMoney (заглушка)</button>
-                <p style="font-size: 0.9em; color: #ccc; margin-top: 10px;">
-                    После оплаты вы будете перенаправлены на страницу подтверждения.
-                </p>
+            <div class="tariff-card">
+                <h3>Стандарт (30 минут)</h3>
+                <p>Полноценная программа: поздравление, хоровод, игры, конкурсы, загадки, песни, сказка.</p>
+                <p><strong>Классический выбор для детских праздников</strong></p>
             </div>
-            <button onclick="prevStep(5)">Назад</button>
+            <div class="tariff-card">
+                <h3>Расширенный (1 час)</h3>
+                <p>Максимально насыщенная программа: интерактивные игры, конкурсы, сценки, подарки, чаепитие.</p>
+                <p><strong>Для больших компаний и корпоративов</strong></p>
+            </div>
         </div>
 
-        <!-- Шаг 7: Подтверждение оплаты -->
-        <div class="step" id="step7">
-            <h2>Оплата прошла успешно!</h2>
-            <p>Ваш заказ принят и записан в систему.</p>
-            <button onclick="location.reload()">Сделать новый заказ</button>
+        <!-- === ФОРМА ЗАКАЗА === -->
+        <div id="orderForm">
+
+            <!-- Шаг 1: Выбор города -->
+            <div class="step active" id="step1">
+                <h2>В каком городе?</h2>
+                <select id="city" required>
+                    <option value="">Выберите город</option>
+                    <option value="Москва">Москва (до 50 пар)</option>
+                    <option value="СПб">Санкт-Петербург (до 27 пар)</option>
+                </select>
+                <button onclick="nextStep(2)">Далее</button>
+            </div>
+
+            <!-- Шаг 2: Дата и время -->
+            <div class="step" id="step2">
+                <h2>Когда?</h2>
+                <input type="text" id="date" placeholder="Например: 25 декабря 2025" required>
+                <input type="text" id="time" placeholder="Например: 14:00, 15:00, 16:00" required>
+                <div id="priceDisplay" class="price-display">Цена: —</div>
+                <div id="error" class="error"></div>
+                <div id="suggestions" class="suggestions" style="display:none;"></div>
+                <button onclick="prevStep(1)">Назад</button>
+                <button onclick="nextStep(3)">Далее</button>
+            </div>
+
+            <!-- Шаг 3: Тип программы -->
+            <div class="step" id="step3">
+                <h2>Выберите программу</h2>
+                <div>
+                    <label>
+                        <input type="radio" name="program" value="Экспресс (10 мин)"> <strong>Экспресс (10 мин)</strong>
+                    </label><br>
+                    <label>
+                        <input type="radio" name="program" value="Стандарт (30 мин)"> <strong>Стандарт (30 мин)</strong>
+                    </label><br>
+                    <label>
+                        <input type="radio" name="program" value="Расширенный (1 час)"> <strong>Расширенный (1 час)</strong>
+                    </label>
+                </div>
+                <button onclick="prevStep(2)">Назад</button>
+                <button onclick="nextStep(4)">Далее</button>
+            </div>
+
+            <!-- Шаг 4: Адрес и дети -->
+            <div class="step" id="step4">
+                <h2>Где?</h2>
+                <input type="text" id="address" placeholder="Полный адрес" required>
+                <input type="number" id="children_count" placeholder="Количество детей" min="1" required>
+                <input type="text" id="child_name" placeholder="Имя ребёнка" required>
+                <button onclick="prevStep(3)">Назад</button>
+                <button onclick="nextStep(5)">Далее</button>
+            </div>
+
+            <!-- Шаг 5: Контакт и пожелания -->
+            <div class="step" id="step5">
+                <h2>Контакт и пожелания</h2>
+                <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
+                <textarea id="comments" placeholder="Пожелания (необязательно)" rows="3"></textarea>
+                <button onclick="prevStep(4)">Назад</button>
+                <button onclick="sendOrder()">Оплатить</button>
+            </div>
+
+            <!-- Шаг 6: Страница оплаты -->
+            <div class="step" id="step6">
+                <h2>Оплата заказа</h2>
+                <div id="orderSummary"></div>
+                <div class="payment-section">
+                    <p>Для оплаты нажмите кнопку ниже:</p>
+                    <button onclick="proceedToPayment()">💳 Оплатить через ЮMoney (заглушка)</button>
+                    <p style="font-size: 0.9em; color: #ccc; margin-top: 10px;">
+                        После оплаты вы будете перенаправлены на страницу подтверждения.
+                    </p>
+                </div>
+                <button onclick="prevStep(5)">Назад</button>
+            </div>
+
+            <!-- Шаг 7: Подтверждение оплаты -->
+            <div class="step" id="step7">
+                <h2>Оплата прошла успешно!</h2>
+                <p>Ваш заказ принят и записан в систему.</p>
+                <button onclick="location.reload()">Сделать новый заказ</button>
+            </div>
         </div>
 
         <p><a href="/download" target="_blank" style="color:#d4af37;">📥 Скачать список заказов</a></p>
     </div>
 
     <script>
-        let currentOrder = {};
+        // === СНЕЖИНКИ ===
+        function createSnowflakes() {
+            const container = document.getElementById('snowflakes');
+            const snowflakeCount = 50;
 
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.classList.add('snowflake');
+                snowflake.style.left = Math.random() * 100 + 'vw';
+                snowflake.style.width = Math.random() * 5 + 5 + 'px';
+                snowflake.style.height = snowflake.style.width;
+                snowflake.style.animationDuration = Math.random() * 5 + 5 + 's';
+                snowflake.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(snowflake);
+            }
+        }
+
+        // === ФУНКЦИИ НАВИГАЦИИ ===
         function nextStep(step) {
             document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
             document.getElementById('step' + step).classList.add('active');
@@ -178,6 +311,7 @@
             document.getElementById('step' + step).classList.add('active');
         }
 
+        // === ОБНОВЛЕНИЕ ЦЕНЫ ===
         document.getElementById('date').addEventListener('input', updatePrice);
         document.getElementById('time').addEventListener('input', updatePrice);
 
@@ -192,6 +326,7 @@
             document.getElementById('priceDisplay').textContent = `Цена: ${data.price || '—'} ₽`;
         }
 
+        // === ОТПРАВКА ЗАКАЗА ===
         async function sendOrder() {
             const data = {
                 city: document.getElementById('city').value,
@@ -234,16 +369,14 @@
             }
         }
 
+        // === ОПЛАТА ===
+        let currentOrder = {};
+
         function proceedToPayment() {
-            // Заглушка — открываем внешнюю ссылку
-            // В реальности: открываем ЮMoney или другой сервис
-            // После оплаты — пользователь возвращается сюда и вызывает confirmOrderFromTemp
             alert("Переход на страницу оплаты (заглушка). В реальности откроется ЮMoney.");
-            // window.open('https://yoomoney.ru/...', '_blank'); // Реальный вызов
-            // После возврата — вызвать confirmOrderFromTemp(order_id)
             setTimeout(() => {
                 confirmOrderFromTemp(currentOrder.order_id);
-            }, 1000); // Симуляция
+            }, 1000);
         }
 
         async function confirmOrderFromTemp(order_id) {
@@ -260,6 +393,11 @@
                 alert('❌ Ошибка подтверждения: ' + result.error);
             }
         }
+
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        window.onload = function() {
+            createSnowflakes();
+        };
     </script>
 </body>
 </html>
