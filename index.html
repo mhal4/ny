@@ -106,6 +106,11 @@
             color: #2F4F4F;
         }
 
+        /* Стиль для календаря */
+        input[type="date"] {
+            font-family: Arial, sans-serif; /* Более стандартный шрифт для календаря */
+        }
+
         button {
             background: #32CD32; /* LimeGreen */
             color: white;
@@ -222,7 +227,6 @@
 
         <!-- === ФОРМА ЗАКАЗА === -->
         <div id="orderForm">
-            <!-- (остальная форма без изменений) -->
             <div class="step active" id="step1">
                 <h2>В каком городе?</h2>
                 <select id="city" required>
@@ -235,7 +239,8 @@
 
             <div class="step" id="step2">
                 <h2>Когда?</h2>
-                <input type="text" id="date" placeholder="Например: 25 декабря 2025" required>
+                <!-- ЗАМЕНЯЕМ input type="text" НА input type="date" -->
+                <input type="date" id="date" min="2025-12-25" max="2026-01-07" required>
                 <input type="text" id="time" placeholder="Например: 14:00, 15:00, 16:00" required>
                 <div id="priceDisplay" class="price-display">Цена: —</div>
                 <div id="error" class="error"></div>
@@ -298,6 +303,7 @@
             </div>
         </div>
 
+        <p><a href="/download" target="_blank" style="color:#228B22;">📥 Скачать список заказов</a></p>
     </div>
 
     <!-- === СУГРОБЫ === -->
@@ -332,33 +338,108 @@
             document.getElementById('step' + step).classList.add('active');
         }
 
-        // === ОБНОВЛЕНИЕ ЦЕНЫ ===
-        document.getElementById('date').addEventListener('input', updatePrice);
+        // === ОБНОВЛЕНИЕ ЦЕНЫ (с проверкой даты) ===
+        document.getElementById('date').addEventListener('change', updatePrice); // Меняем на 'change' для date
         document.getElementById('time').addEventListener('input', updatePrice);
 
+        // Функция для преобразования даты из YYYY-MM-DD в "DD Month YYYY"
+        function formatDateToDisplay(dateStr) {
+            const date = new Date(dateStr);
+            // Убедимся, что дата действительная
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+            const day = date.getDate();
+            const monthNames = [
+                "января", "февраля", "марта", "апреля", "мая", "июня",
+                "июля", "августа", "сентября", "октября", "ноября", "декабря"
+            ];
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
+        }
+
         async function updatePrice() {
-            const date = document.getElementById('date').value.trim();
+            const dateInput = document.getElementById('date');
+            const dateValue = dateInput.value; // Это будет в формате YYYY-MM-DD
             const time = document.getElementById('time').value.trim();
             const program = document.querySelector('input[name="program"]:checked');
-            if (!date || !time || !program) return;
+            const errorDiv = document.getElementById('error');
+            const suggestionsDiv = document.getElementById('suggestions');
 
-            const res = await fetch(`/api/price?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&program_type=${encodeURIComponent(program.value)}`);
+            // Проверяем, входит ли дата в допустимый диапазон
+            if (dateValue) {
+                const selectedDate = new Date(dateValue);
+                const minDate = new Date('2025-12-25');
+                const maxDate = new Date('2026-01-07');
+
+                if (selectedDate < minDate || selectedDate > maxDate) {
+                    errorDiv.textContent = '❌ Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
+                    suggestionsDiv.style.display = 'none';
+                    document.getElementById('priceDisplay').textContent = 'Цена: —';
+                    return; // Не продолжаем, если дата вне диапазона
+                } else {
+                    errorDiv.textContent = ''; // Очищаем ошибку, если дата правильная
+                }
+            }
+
+            if (!dateValue || !time || !program) {
+                document.getElementById('priceDisplay').textContent = 'Цена: —';
+                return;
+            }
+
+            // Преобразуем дату в формат, который понимает API
+            const displayDate = formatDateToDisplay(dateValue);
+
+            const res = await fetch(`/api/price?date=${encodeURIComponent(displayDate)}&time=${encodeURIComponent(time)}&program_type=${encodeURIComponent(program.value)}`);
             const data = await res.json();
             document.getElementById('priceDisplay').textContent = `Цена: ${data.price || '—'} ₽`;
         }
 
-        // === ОТПРАВКА ЗАКАЗА ===
+        // === ОТПРАВКА ЗАКАЗА (с проверкой даты перед отправкой) ===
         async function sendOrder() {
+            const dateInput = document.getElementById('date');
+            const dateValue = dateInput.value;
+            const time = document.getElementById('time').value.trim();
+            const city = document.getElementById('city').value;
+            const program = document.querySelector('input[name="program"]:checked');
+            const address = document.getElementById('address').value;
+            const children_count = document.getElementById('children_count').value;
+            const child_name = document.getElementById('child_name').value;
+            const phone = document.getElementById('phone').value;
+            const comments = document.getElementById('comments').value;
+
+            const errorDiv = document.getElementById('error');
+
+            // Проверяем дату перед отправкой
+            if (dateValue) {
+                const selectedDate = new Date(dateValue);
+                const minDate = new Date('2025-12-25');
+                const maxDate = new Date('2026-01-07');
+
+                if (selectedDate < minDate || selectedDate > maxDate) {
+                    errorDiv.textContent = '❌ Невозможно отправить заказ. Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
+                    return;
+                }
+            }
+
+            if (!dateValue || !time || !program) {
+                 errorDiv.textContent = '❌ Пожалуйста, заполните все обязательные поля.';
+                 return;
+            }
+
+            const displayDate = formatDateToDisplay(dateValue);
+
             const data = {
-                city: document.getElementById('city').value,
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                program_type: document.querySelector('input[name="program"]:checked').value,
-                address: document.getElementById('address').value,
-                children_count: document.getElementById('children_count').value,
-                child_name: document.getElementById('child_name').value,
-                phone: document.getElementById('phone').value,
-                comments: document.getElementById('comments').value,
+                city: city,
+                date: displayDate, // Отправляем в формате "DD Month YYYY"
+                time: time,
+                program_type: program.value,
+                address: address,
+                children_count: children_count,
+                child_name: child_name,
+                phone: phone,
+                comments: comments,
                 price: parseFloat(document.getElementById('priceDisplay').textContent.replace('Цена: ', '').replace(' ₽', '')) || 0
             };
 
@@ -384,9 +465,10 @@
                 `;
 
                 nextStep(6);
+                errorDiv.textContent = ''; // Очищаем ошибки после успешной отправки
             } else {
                 const result = await res.json();
-                alert('❌ Ошибка: ' + result.error);
+                errorDiv.textContent = '❌ Ошибка: ' + result.error;
             }
         }
 
@@ -418,6 +500,10 @@
         // === ИНИЦИАЛИЗАЦИЯ ===
         window.onload = function() {
             createSnowflakes();
+            // Устанавливаем минимальную и максимальную дату для виджета
+            const dateInput = document.getElementById('date');
+            dateInput.min = '2025-12-25';
+            dateInput.max = '2026-01-07';
         };
     </script>
 </body>
