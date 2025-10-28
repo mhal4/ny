@@ -338,70 +338,54 @@
             document.getElementById('step' + step).classList.add('active');
         }
 
-        // === ОБНОВЛЕНИЕ ЦЕНЫ (с проверкой даты) ===
-        document.getElementById('date').addEventListener('change', updatePrice); // Меняем на 'change' для date
-        document.getElementById('time').addEventListener('input', updatePrice);
-
-        // Функция для преобразования даты из YYYY-MM-DD в "DD Month YYYY"
-        function formatDateToDisplay(dateStr) {
-            const date = new Date(dateStr);
-            // Убедимся, что дата действительная
-            if (isNaN(date.getTime())) {
-                return '';
-            }
-            const day = date.getDate();
-            const monthNames = [
-                "января", "февраля", "марта", "апреля", "мая", "июня",
-                "июля", "августа", "сентября", "октября", "ноября", "декабря"
-            ];
-            const month = monthNames[date.getMonth()];
-            const year = date.getFullYear();
-            return `${day} ${month} ${year}`;
-        }
-
-        async function updatePrice() {
-            const dateInput = document.getElementById('date');
-            const dateValue = dateInput.value; // Это будет в формате YYYY-MM-DD
+        // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ЦЕНЫ (с проверкой всех параметров) ===
+        function updatePrice() {
+            const date = document.getElementById('date').value.trim();
             const time = document.getElementById('time').value.trim();
             const program = document.querySelector('input[name="program"]:checked');
+            const priceDisplay = document.getElementById('priceDisplay');
             const errorDiv = document.getElementById('error');
-            const suggestionsDiv = document.getElementById('suggestions');
 
-            // Проверяем, входит ли дата в допустимый диапазон
-            if (dateValue) {
-                const selectedDate = new Date(dateValue);
-                const minDate = new Date('2025-12-25');
-                const maxDate = new Date('2026-01-07');
-
-                if (selectedDate < minDate || selectedDate > maxDate) {
-                    errorDiv.textContent = '❌ Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
-                    suggestionsDiv.style.display = 'none';
-                    document.getElementById('priceDisplay').textContent = 'Цена: —';
-                    return; // Не продолжаем, если дата вне диапазона
-                } else {
-                    errorDiv.textContent = ''; // Очищаем ошибку, если дата правильная
-                }
-            }
-
-            if (!dateValue || !time || !program) {
-                document.getElementById('priceDisplay').textContent = 'Цена: —';
+            // Проверяем, все ли параметры выбраны
+            if (!date || !time || !program) {
+                priceDisplay.textContent = 'Цена: —';
+                // errorDiv.textContent = ''; // Не показываем ошибку, просто ждём
                 return;
             }
 
-            // Преобразуем дату в формат, который понимает API
-            const displayDate = formatDateToDisplay(dateValue);
-
-            const res = await fetch(`/api/price?date=${encodeURIComponent(displayDate)}&time=${encodeURIComponent(time)}&program_type=${encodeURIComponent(program.value)}`);
-            const data = await res.json();
-            document.getElementById('priceDisplay').textContent = `Цена: ${data.price || '—'} ₽`;
+            // Если все параметры выбраны, делаем запрос
+            fetch(`/api/price?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&program_type=${encodeURIComponent(program.value)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.price !== undefined) {
+                        priceDisplay.textContent = `Цена: ${data.price} ₽`;
+                        errorDiv.textContent = ''; // Очищаем ошибки, если цена получена
+                    } else {
+                        priceDisplay.textContent = 'Цена: —';
+                        errorDiv.textContent = '❌ Ошибка получения цены.';
+                        console.error('API вернул некорректные данные:', data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при получении цены:', error);
+                    priceDisplay.textContent = 'Цена: —';
+                    errorDiv.textContent = '❌ Ошибка соединения при получении цены.';
+                });
         }
 
-        // === ОТПРАВКА ЗАКАЗА (с проверкой даты перед отправкой) ===
+        // Привязываем обработчики событий
+        document.getElementById('date').addEventListener('change', updatePrice); // Изменено на 'change'
+        document.getElementById('time').addEventListener('input', updatePrice);
+        // Нужно отслеживать изменение выбора программы
+        const programInputs = document.querySelectorAll('input[name="program"]');
+        programInputs.forEach(input => input.addEventListener('change', updatePrice)); // Добавляем обработчик на 'change' для радио-кнопок
+
+
+        // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОТПРАВКИ ЗАКАЗА (с проверкой заполнения) ===
         async function sendOrder() {
-            const dateInput = document.getElementById('date');
-            const dateValue = dateInput.value;
-            const time = document.getElementById('time').value.trim();
             const city = document.getElementById('city').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
             const program = document.querySelector('input[name="program"]:checked');
             const address = document.getElementById('address').value;
             const children_count = document.getElementById('children_count').value;
@@ -411,30 +395,24 @@
 
             const errorDiv = document.getElementById('error');
 
-            // Проверяем дату перед отправкой
-            if (dateValue) {
-                const selectedDate = new Date(dateValue);
-                const minDate = new Date('2025-12-25');
-                const maxDate = new Date('2026-01-07');
-
-                if (selectedDate < minDate || selectedDate > maxDate) {
-                    errorDiv.textContent = '❌ Невозможно отправить заказ. Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
-                    return;
-                }
+            // Проверяем, все ли обязательные поля заполнены
+            if (!city || !date || !time || !program || !address || !children_count || !child_name || !phone) {
+                errorDiv.textContent = '❌ Пожалуйста, заполните все обязательные поля.';
+                return; // Не отправляем, если есть пустые обязательные поля
             }
 
-            if (!dateValue || !time || !program) {
-                 errorDiv.textContent = '❌ Пожалуйста, заполните все обязательные поля.';
+            // Проверяем формат телефона
+            if (!phone.startsWith('+7') || phone.length !== 12) {
+                 errorDiv.textContent = '❌ Неверный формат телефона. Используйте формат +7XXXXXXXXXX.';
                  return;
             }
 
-            const displayDate = formatDateToDisplay(dateValue);
-
+            // Если все проверки пройдены, отправляем заказ
             const data = {
                 city: city,
-                date: displayDate, // Отправляем в формате "DD Month YYYY"
+                date: formatDateToDisplay(date), // Преобразуем дату
                 time: time,
-                program_type: program.value,
+                program_type: program.value, // Используем значение из радио-кнопки
                 address: address,
                 children_count: children_count,
                 child_name: child_name,
@@ -470,6 +448,23 @@
                 const result = await res.json();
                 errorDiv.textContent = '❌ Ошибка: ' + result.error;
             }
+        }
+
+        // === ФУНКЦИЯ ФОРМАТИРОВАНИЯ ДАТЫ (для отправки API) ===
+        // Эта функция уже была, но убедимся, что она правильно работает
+        function formatDateToDisplay(dateStr) {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+            const day = date.getDate();
+            const monthNames = [
+                "января", "февраля", "марта", "апреля", "мая", "июня",
+                "июля", "августа", "сентября", "октября", "ноября", "декабря"
+            ];
+            const month = monthNames[date.getMonth()];
+            const year = date.getFullYear();
+            return `${day} ${month} ${year}`;
         }
 
         // === ОПЛАТА ===
