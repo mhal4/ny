@@ -354,6 +354,37 @@ def get_time_slots_keyboard(
     return
 
 
+# === ИНЛАЙН-КЛАВИАТУРЫ ===
+
+
+def get_cities_keyboard():
+    """
+    Клавиатура для выбора города
+    """
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Москва", callback_data="city_moscow")
+    kb.button(text="СПб", callback_data="city_spb")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ДАТ ===
+def get_dates_keyboard():
+    """
+    Клавиатура с датами с 25.12.2025 по 07.01.2026
+    """
+    kb = InlineKeyboardBuilder()
+    start_date = datetime(2025, 12, 25)
+    end_date = datetime(2026, 1, 7)
+    current = start_date
+    while current <= end_date:
+        day = current.strftime("%d %B %Y")
+        kb.button(text=day, callback_data=f"date_{day}")
+        current += timedelta(days=1)
+    kb.adjust(2)
+    return kb.as_markup()
+
+
 # === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ КЛАВИАТУРЫ ПРОГРАММЫ ===
 def get_programs_keyboard():
     """
