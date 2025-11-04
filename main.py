@@ -299,6 +299,50 @@ def get_price(date_str, time_str, program_type):
         return 0
 
 
+# === ИНЛАЙН-КЛАВИАТУРЫ ===
+
+
+def get_cities_keyboard():
+    """
+    Клавиатура для выбора города
+    """
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Москва", callback_data="city_moscow")
+    kb.button(text="СПб", callback_data="city_spb")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ДАТ ===
+def get_dates_keyboard():
+    """
+    Клавиатура с датами с 25.12.2025 по 07.01.2026
+    """
+    kb = InlineKeyboardBuilder()
+    start_date = datetime(2025, 12, 25)
+    end_date = datetime(2026, 1, 7)
+    current = start_date
+    while current <= end_date:
+        day = current.strftime("%d %B %Y")
+        kb.button(text=day, callback_data=f"date_{day}")
+        current += timedelta(days=1)
+    kb.adjust(2)
+    return kb.as_markup()
+
+
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ КЛАВИАТУРЫ ПРОГРАММЫ ===
+def get_programs_keyboard():
+    """
+    Клавиатура для выбора типа программы (синхронизирована с сайтом)
+    """
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Экспресс (10 мин)", callback_data="program_10")
+    kb.button(text="Стандарт (30 мин)", callback_data="program_30")
+    kb.button(text="Расширенный (1 час)", callback_data="program_60")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 # === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ВРЕМЕННЫХ СЛОТОВ (с учётом новых типов программ и ночи) ===
 def get_time_slots_keyboard(
     date_str, city, program_type
@@ -352,50 +396,6 @@ def get_time_slots_keyboard(
 
     kb.adjust(2)
     return
-
-
-# === ИНЛАЙН-КЛАВИАТУРЫ ===
-
-
-def get_cities_keyboard():
-    """
-    Клавиатура для выбора города
-    """
-    kb = InlineKeyboardBuilder()
-    kb.button(text="Москва", callback_data="city_moscow")
-    kb.button(text="СПб", callback_data="city_spb")
-    kb.adjust(1)
-    return kb.as_markup()
-
-
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ДАТ ===
-def get_dates_keyboard():
-    """
-    Клавиатура с датами с 25.12.2025 по 07.01.2026
-    """
-    kb = InlineKeyboardBuilder()
-    start_date = datetime(2025, 12, 25)
-    end_date = datetime(2026, 1, 7)
-    current = start_date
-    while current <= end_date:
-        day = current.strftime("%d %B %Y")
-        kb.button(text=day, callback_data=f"date_{day}")
-        current += timedelta(days=1)
-    kb.adjust(2)
-    return kb.as_markup()
-
-
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ КЛАВИАТУРЫ ПРОГРАММЫ ===
-def get_programs_keyboard():
-    """
-    Клавиатура для выбора типа программы (синхронизирована с сайтом)
-    """
-    kb = InlineKeyboardBuilder()
-    kb.button(text="Экспресс (10 мин)", callback_data="program_10")
-    kb.button(text="Стандарт (30 мин)", callback_data="program_30")
-    kb.button(text="Расширенный (1 час)", callback_data="program_60")
-    kb.adjust(1)
-    return kb.as_markup()
 
 
 def get_payment_keyboard(price):
@@ -470,9 +470,9 @@ async def select_program(callback: CallbackQuery, state: FSMContext):
     city = data["city"]
 
     # Генерируем слоты времени с учётом выбранной программы
-    kb = get_time_slots_keyboard(date_str, city, program_type)
     await callback.message.edit_text(
-        f"🎯 Вы выбрали {program_type}. Теперь выберите время:", reply_markup=kb
+        f"🎯 Вы выбрали {program_type}. Теперь выберите время:",
+        reply_markup=get_time_slots_keyboard(date_str, city, program_type),
     )
     await callback.answer()
 
