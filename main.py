@@ -365,7 +365,7 @@ def get_time_slots_keyboard(
             return kb.as_markup()
 
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [23]
+    night_hours_31 = [22, 23]
     night_hours_1st = [0, 1, 2, 3, 4, 5]
 
     hours_to_generate = standard_hours[:]
@@ -395,7 +395,7 @@ def get_time_slots_keyboard(
             )
 
     kb.adjust(2)
-    return
+    return kb.as_markup()
 
 
 def get_payment_keyboard(price):
