@@ -171,7 +171,7 @@ def get_price(date_str, time_str, program_type):
         if "." in date_str:
             dt = datetime.strptime(date_str, "%d.%m.%Y")
         else:
-            dt = datetime.strptime(date_str, "%d %B %Y")
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
 
         # Извлекаем час из time_str
         time_parts = time_str.split(":")
