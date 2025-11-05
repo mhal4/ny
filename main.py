@@ -180,6 +180,8 @@ def get_price(date_str, time_str, program_type):
             dt = datetime.strptime(date_str, "%d.%m.%Y")
         elif "-" in date_str:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
+        elif "/" in date_str:
+            dt = datetime.strptime(date_str, "%m/%d/%Y")
         else:
             dt = datetime.strptime(date_str, "%d %B %Y")
 
@@ -499,6 +501,66 @@ async def cmd_start(message: Message, state: FSMContext):
         )
     await state.set_data({})  # Сброс состояния
     await state.clear()  # Полная очистка
+
+
+# === ОБРАБОТЧИК КНОПКИ "ВВЕСТИ ID" ===
+@dp.callback_query(F.data == "use_id")
+async def prompt_for_order_id(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("🔑 Пожалуйста, введите ID вашего заказа:")
+    await state.set_state(SupportForm.waiting_for_order_id)
+    await callback.answer()
+
+
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА ID ЗАКАЗА ===
+
+
+def find_order_by_id(order_id):
+    """
+    Ищет заказ по ID в temp_orders.json или orders.xlsx
+    Возвращает (data, source) или (None, None)
+    """
+    # Проверяем во временных заказах
+    if os.path.exists(TEMP_ORDERS_FILE):
+        with open(TEMP_ORDERS_FILE, "r", encoding="utf-8") as f:
+            temp_orders = json.load(f)
+            if order_id in temp_orders:
+                return temp_orders[order_id], "temp"
+    # Проверяем в оплаченных заказах
+    df = load_orders()
+    if not df.empty:
+        if "Order ID" in df.columns:
+            row = df[df["Order ID"] == order_id]
+            if not row.empty:
+                return row.iloc[0].to_dict(), "paid"
+    return None, None
+    # Сохраняем связь chat_id -> order_id
+    set_user_order(message.chat.id, order_id)
+    await state.clear()  # Сбрасываем FSM
+    # Отправляем информацию о заказе
+    await message.answer(
+        f"✅ Вы успешно привязаны к заказу #{order_id}.\n\n"
+        f"Информация о заказе:\n"
+        f"Кого: {order_data.get('Кого пригласить', 'N/A')}\n"
+        f"Город: {order_data.get('Город', 'N/A')}\n"
+        f"Дата: {order_data.get('Дата визита', 'N/A')}\n"
+        f"Время: {order_data.get('Время визита', 'N/A')}\n"
+        f"Программа: {order_data.get('Тип программы', 'N/A')}\n"
+        f"Цена: {order_data.get('Цена', 'N/A')} ₽\n"
+        f"Адрес: {order_data.get('Адрес', 'N/A')}\n"
+        f"Детей: {order_data.get('Количество детей', 'N/A')}\n"
+        f"Имя ребёнка: {order_data.get('Имя ребёнка', 'N/A')}\n"
+        f"Телефон: {order_data.get('Телефон', 'N/A')}\n"
+        f"Пожелания: {order_data.get('Пожелания', 'N/A')}\n\n"
+        f"Теперь вы можете задавать вопросы по этому заказу, и мы постараемся вам помочь."
+    )
+
+
+@dp.message(SupportForm.waiting_for_order_id)
+async def process_order_id(message: Message, state: FSMContext):
+    order_id = message.text.strip()
+    if not order_id:
+        await message.answer("❌ ID заказа не может быть пустым. Попробуйте снова.")
+        return
 
 
 # === ОБРАБОТЧИК КНОПКИ "СДЕЛАТЬ ЗАКАЗ" ===
