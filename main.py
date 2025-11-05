@@ -261,8 +261,8 @@ def get_price(date_str, time_str, program_type):
             else:
                 return round(7000 * sale)
 
-        # Цены для Расширенного (1 час) — условно выше
-        elif program_type == "Расширенный (1 час)":
+        # Цены для Расширенной (1 час) — условно выше
+        elif program_type == "Расширенная (60 мин)":
             if dt <= datetime(2025, 12, 28):
                 return round(17000 * sale)
             elif dt <= datetime(2025, 12, 30):
@@ -392,7 +392,7 @@ def get_time_slots_keyboard(date_str, city, program_type):
             return kb.as_markup()
 
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [23]
+    night_hours_31 = [22, 23]
     night_hours_1st = [0, 1, 2, 3, 4, 5]
 
     hours_to_generate = standard_hours[:]
@@ -432,7 +432,7 @@ def get_programs_keyboard():
     kb = InlineKeyboardBuilder()
     kb.button(text="Экспресс (10 мин)", callback_data="program_10")
     kb.button(text="Стандарт (30 мин)", callback_data="program_30")
-    kb.button(text="Расширенный (1 час)", callback_data="program_60")
+    kb.button(text="Расширенная (60 мин)", callback_data="program_60")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -744,6 +744,7 @@ async def select_program(callback: CallbackQuery, state: FSMContext):
     program_map = {
         "program_15": "Экспресс (15 мин)",
         "program_30": "Классическая (30 мин)",
+        "program_60": "Расширенная (60 мин)",
     }
     program_type = program_map.get(callback.data)
     if not program_type:
