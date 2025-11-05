@@ -425,25 +425,24 @@ def get_time_slots_keyboard(date_str, city, program_type):
     return kb.as_markup()
 
 
+def get_programs_keyboard():
+    """
+    Клавиатура для выбора типа программы (синхронизирована с сайтом)
+    """
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Экспресс (10 мин)", callback_data="program_10")
+    kb.button(text="Стандарт (30 мин)", callback_data="program_30")
+    kb.button(text="Расширенная (60 мин)", callback_data="program_60")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def get_payment_keyboard(price):
     """
     Клавиатура с кнопкой "Оплатить"
     """
     kb = InlineKeyboardBuilder()
     kb.button(text=f"💳 Оплатить {price} ₽", url="https://yoomoney.ru/...")  # Заглушка
-    kb.adjust(1)
-    return kb.as_markup()
-
-
-# === НОВАЯ ФУНКЦИЯ ГЕНЕРАЦИИ КЛАВИАТУРЫ ПРОГРАММЫ ===
-def get_programs_keyboard():
-    """
-    Клавиатура для выбора типа программы
-    """
-    kb = InlineKeyboardBuilder()
-    kb.button(text="Экспресс (10 мин)", callback_data="program_10")
-    kb.button(text="Стандарт (30 мин)", callback_data="program_30")
-    kb.button(text="Расширенная (1 час)", callback_data="program_60")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -482,178 +481,78 @@ async def start_new_order(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         "🏙️ Выберите город:", reply_markup=get_cities_keyboard()
     )
-    # Продолжаем новый FSM процесс
+    # Продолжаем старый FSM процесс
     await state.set_data({"intent": "new_order"})
     await callback.answer()
 
 
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ГОРОДА ===
-@dp.callback_query(F.data.startswith("city_"))
-async def select_city(callback: CallbackQuery, state: FSMContext):
-    """
-    Выбор города через инлайн-кнопку. Сохраняет город и запрашивает программу.
-    """
-    city = callback.data.replace("city_", "").title()
-    await state.update_data(city=city)
-    await callback.message.edit_text(
-        f"🏙️ Вы выбрали {city}. Теперь выберите тип программы:",
-        reply_markup=get_programs_keyboard(),
-    )
+# === ОБРАБОТЧИК КНОПКИ "ВВЕСТИ ID" ===
+@dp.callback_query(F.data == "use_id")
+async def prompt_for_order_id(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("🔑 Пожалуйста, введите ID вашего заказа:")
+    await state.set_state(SupportForm.waiting_for_order_id)
     await callback.answer()
 
 
-# === НОВЫЙ ОБРАБОТЧИК ВЫБОРА ПРОГРАММЫ ===
-@dp.callback_query(F.data.startswith("program_"))
-async def select_program(callback: CallbackQuery, state: FSMContext):
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА ID ЗАКАЗА ===
+def find_order_by_id(order_id):
     """
-    Выбор программы. Сохраняет программу и запрашивает дату.
+    Ищет заказ по ID в temp_orders.json или orders.xlsx
+    Возвращает (data, source) или (None, None)
     """
-    program_map = {
-        "program_10": "Экспресс (10 мин)",
-        "program_30": "Стандарт (30 мин)",
-        "program_60": "Расширенный (1 час)",
-    }
-    program_type = program_map.get(callback.data)
-    if not program_type:
+    # Проверяем во временных заказах
+    if os.path.exists(TEMP_ORDERS_FILE):
+        with open(TEMP_ORDERS_FILE, "r", encoding="utf-8") as f:
+            temp_orders = json.load(f)
+        if order_id in temp_orders:
+            return temp_orders[order_id], "temp"
+
+    # Проверяем в оплаченных заказах
+    df = load_orders()
+    if not df.empty:
+        if "Order ID" in df.columns:
+            row = df[df["Order ID"] == order_id]
+            if not row.empty:
+                return row.iloc[0].to_dict(), "paid"
+    return None, None
+
+
+@dp.message(SupportForm.waiting_for_order_id)
+async def process_order_id(message: Message, state: FSMContext):
+    order_id = message.text.strip()
+    if not order_id:
+        await message.answer("❌ ID заказа не может быть пустым. Попробуйте снова.")
         return
-    await state.update_data(program_type=program_type)
-    # Показываем календарь дат
-    await callback.message.edit_text(
-        f"🎯 Вы выбрали {program_type}. Теперь выберите дату:",
-        reply_markup=get_dates_keyboard(),
-    )
-    await callback.answer()
 
+    order_data, source = find_order_by_id(order_id)
+    if not order_data:
+        await message.answer(
+            "❌ Заказ с таким ID не найден. Проверьте ID и попробуйте снова."
+        )
+        await state.clear()
+        return
 
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ДАТЫ ===
-@dp.callback_query(F.data.startswith("date_"))
-async def select_date(callback: CallbackQuery, state: FSMContext):
-    """
-    Выбор даты через инлайн-кнопку. Сохраняет дату и запрашивает время с ценой.
-    """
-    date_str = callback.data.replace("date_", "")
-    await state.update_data(date=date_str)
-    data = await state.get_data()
-    city = data["city"]
-    program_type = data["program_type"]
+    # Сохраняем связь chat_id -> order_id
+    set_user_order(message.chat.id, order_id)
+    await state.clear()  # Сбрасываем FSM
 
-    # Генерируем слоты времени с учётом выбранной программы и показом цены
-    kb = get_time_slots_keyboard(date_str, city, program_type)
-    await callback.message.edit_text(
-        f"📅 Вы выбрали {date_str}. Выберите время:", reply_markup=kb
-    )
-    await callback.answer()
-
-
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ВРЕМЕННЫХ СЛОТОВ (с ценой) ===
-def get_time_slots_keyboard(date_str, city, program_type):
-    """
-    Клавиатура с временными слотами (с ценой и оставшимися парами)
-    """
-    kb = InlineKeyboardBuilder()
-    booked = get_booked_slots()
-    max_slots = CITIES.get(city, 50)
-
-    for hour in [14, 15, 16, 17, 18, 19, 20, 21]:
-        time_str = f"{hour:02d}:00"
-        slot_key = f"{date_str} {time_str}"
-        booked_count = booked.get(slot_key, {}).get(city, 0)
-        available_count = max_slots - booked_count
-        price = get_price(
-            date_str, time_str, program_type
-        )  # Передаём актуальный program_type
-
-        if available_count > 0:
-            kb.button(
-                text=f"{time_str} — {price} ₽ (осталось {available_count})",
-                callback_data=f"time_{time_str}",
-            )
-        else:
-            kb.button(
-                text=f"{time_str} — {price} ₽ (нет мест)",
-                callback_data=f"unavailable_{time_str}",
-            )
-
-    kb.adjust(2)
-    return kb.as_markup()
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ВРЕМЕНИ ===
-@dp.callback_query(F.data.startswith("time_"))
-async def select_time(callback: CallbackQuery, state: FSMContext):
-    """
-    Выбор времени через инлайн-кнопку. Сохраняет время, показывает итоговую цену, запрашивает адрес.
-    """
-    time_str = callback.data.replace("time_", "")
-    await state.update_data(time=time_str)
-    data = await state.get_data()
-    # Рассчитываем итоговую цену
-    final_price = get_price(data["date"], time_str, data["program_type"])
-    await state.update_data(price=final_price)  # Сохраняем итоговую цену
-
-    await callback.message.edit_text(
-        f"⏰ Вы выбрали {time_str}. Итоговая цена: {final_price} ₽\n\nВведите адрес:"
-    )
-    await state.set_state(OrderForm.address)
-    await callback.answer()
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК "НЕТ МЕСТ" (теперь с программой) ===
-@dp.callback_query(F.data.startswith("unavailable_"))
-async def unavailable_time(callback: CallbackQuery, state: FSMContext):
-    """
-    Обработка нажатия на "занятое" время. Показывает сообщение с учётом программы.
-    """
-    data = await state.get_data()
-    program_type = data.get("program_type", "неизвестно")
-    await callback.answer(
-        f"❌ На это время нет свободных артистов для '{program_type}'. Выберите другое.",
-        show_alert=True,
-    )
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА АДРЕСА ===
-@dp.message(OrderForm.address)
-async def process_address(message: Message, state: FSMContext):
-    await state.update_data(address=message.text)
-    await message.answer("🧒 Сколько детей будет на мероприятии? (например: 15)")
-    await state.set_state(OrderForm.children_count)
-
-
-# ... (остальные обработчики OrderForm без изменений, кроме process_comments) ...
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК КОММЕНТАРИЕВ (показывает ID) ===
-@dp.message(OrderForm.comments)
-async def process_comments(message: Message, state: FSMContext):
-    await state.update_data(
-        comments=message.text if message.text.lower() != "нет" else "-"
-    )
-    data = await state.get_data()
-    # Генерируем ID для временного заказа
-    order_id = str(uuid.uuid4())  # <-- ГЕНЕРАЦИЯ ORDER_ID
-    temp_data = {**data, "order_id": order_id}
-    save_temp_order(order_id, temp_data)
-    price = data["price"]
-    kb = get_payment_keyboard(price)
+    # Отправляем информацию о заказе
     await message.answer(
-        f"🎉 Заказ готов к оплате!\n"
-        f"Кого: Дед Мороз и Снегурочка\n"
-        f"Город: {data['city']}\n"
-        f"Дата: {data['date']}\n"
-        f"Время: {data['time']}\n"
-        f"Программа: {data['program_type']}\n"
-        f"Цена: {price} ₽\n"
-        f"Адрес: {data['address']}\n"
-        f"Детей: {data['children_count']}\n"
-        f"Имя: {data['child_name']}\n"
-        f"Телефон: {data['phone']}\n"
-        f"Пожелания: {data['comments']}\n"
-        f"ID заказа: {order_id}\n\n"  # <-- ПОКАЗ ID ЗАКАЗА
-        f"Нажмите кнопку ниже для оплаты:",
-        reply_markup=kb,
+        f"✅ Вы успешно привязаны к заказу #{order_id}.\n\n"
+        f"Информация о заказе:\n"
+        f"Кого: {order_data.get('Кого пригласить', 'N/A')}\n"
+        f"Город: {order_data.get('Город', 'N/A')}\n"
+        f"Дата: {order_data.get('Дата визита', 'N/A')}\n"
+        f"Время: {order_data.get('Время визита', 'N/A')}\n"
+        f"Программа: {order_data.get('Тип программы', 'N/A')}\n"
+        f"Цена: {order_data.get('Цена', 'N/A')} ₽\n"
+        f"Адрес: {order_data.get('Адрес', 'N/A')}\n"
+        f"Детей: {order_data.get('Количество детей', 'N/A')}\n"
+        f"Имя ребёнка: {order_data.get('Имя ребёнка', 'N/A')}\n"
+        f"Телефон: {order_data.get('Телефон', 'N/A')}\n"
+        f"Пожелания: {order_data.get('Пожелания', 'N/A')}\n\n"
+        f"Теперь вы можете задавать вопросы по этому заказу, и мы постараемся вам помочь."
     )
-    await state.clear()
 
 
 # === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ТЕКСТА (для поддержки по ID и ответов менеджера) ===
@@ -782,83 +681,95 @@ async def handle_message(message: Message, state: FSMContext):
         await message.answer("Привет! Используйте /start, чтобы начать.")
 
 
-# === ОБРАБОТЧИКИ БОТА (старые) ===
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ГОРОДА ===
 @dp.callback_query(F.data.startswith("city_"))
 async def select_city(callback: CallbackQuery, state: FSMContext):
     """
-    Выбор города через инлайн-кнопку
+    Выбор города через инлайн-кнопку. Сохраняет город и запрашивает программу.
     """
     city = callback.data.replace("city_", "").title()
     await state.update_data(city=city)
     await callback.message.edit_text(
-        f"🏙️ Вы выбрали {city}. Выберите дату:", reply_markup=get_dates_keyboard()
+        f"🏙️ Вы выбрали {city}. Теперь выберите тип программы:",
+        reply_markup=get_programs_keyboard(),
     )
     await callback.answer()
 
 
+# === НОВЫЙ ОБРАБОТЧИК ВЫБОРА ПРОГРАММЫ ===
+@dp.callback_query(F.data.startswith("program_"))
+async def select_program(callback: CallbackQuery, state: FSMContext):
+    """
+    Выбор программы. Сохраняет программу и запрашивает дату.
+    """
+    program_map = {
+        "program_10": "Экспресс (10 мин)",
+        "program_30": "Стандарт (30 мин)",
+        "program_60": "Расширенный (1 час)",
+    }
+    program_type = program_map.get(callback.data)
+    if not program_type:
+        return
+    await state.update_data(program_type=program_type)
+    # Показываем календарь дат
+    await callback.message.edit_text(
+        f"🎯 Вы выбрали {program_type}. Теперь выберите дату:",
+        reply_markup=get_dates_keyboard(),
+    )
+    await callback.answer()
+
+
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ДАТЫ ===
 @dp.callback_query(F.data.startswith("date_"))
 async def select_date(callback: CallbackQuery, state: FSMContext):
     """
-    Выбор даты через инлайн-кнопку
+    Выбор даты через инлайн-кнопку. Сохраняет дату и запрашивает время с ценой.
     """
     date_str = callback.data.replace("date_", "")
     await state.update_data(date=date_str)
     data = await state.get_data()
-    kb = get_time_slots_keyboard(
-        date_str, data["city"], data.get("program_type", "Экспресс (15 мин)")
-    )
+    city = data["city"]
+    program_type = data["program_type"]
+
+    # Генерируем слоты времени с учётом выбранной программы и показом цены
+    kb = get_time_slots_keyboard(date_str, city, program_type)
     await callback.message.edit_text(
         f"📅 Вы выбрали {date_str}. Выберите время:", reply_markup=kb
     )
     await callback.answer()
 
 
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ВРЕМЕНИ ===
 @dp.callback_query(F.data.startswith("time_"))
 async def select_time(callback: CallbackQuery, state: FSMContext):
     """
-    Выбор времени через инлайн-кнопку
+    Выбор времени через инлайн-кнопку. Сохраняет время, показывает итоговую цену, запрашивает адрес.
     """
     time_str = callback.data.replace("time_", "")
     await state.update_data(time=time_str)
+    data = await state.get_data()
+    # Рассчитываем итоговую цену
+    final_price = get_price(data["date"], time_str, data["program_type"])
+    await state.update_data(price=final_price)  # Сохраняем итоговую цену
+
     await callback.message.edit_text(
-        f"⏰ Вы выбрали {time_str}. Выберите программу:",
-        reply_markup=get_programs_keyboard(),
+        f"⏰ Вы выбрали {time_str}. Итоговая цена: {final_price} ₽\n\nВведите адрес:"
     )
+    await state.set_state(OrderForm.address)
     await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("unavailable_"))
-async def unavailable_time(callback: CallbackQuery):
+async def unavailable_time(callback: CallbackQuery, state: FSMContext):
     """
-    Обработка нажатия на "занятое" время
+    Обработка нажатия на "занятое" время. Показывает сообщение с учётом программы.
     """
-    await callback.answer(
-        "❌ На это время нет свободных артистов. Выберите другое.", show_alert=True
-    )
-
-
-@dp.callback_query(F.data.startswith("program_"))
-async def select_program(callback: CallbackQuery, state: FSMContext):
-    """
-    Выбор программы (экспресс/классика) через инлайн-кнопку
-    """
-    program_map = {
-        "program_15": "Экспресс (15 мин)",
-        "program_30": "Классическая (30 мин)",
-        "program_60": "Расширенная (60 мин)",
-    }
-    program_type = program_map.get(callback.data)
-    if not program_type:
-        return
-    await state.update_data(program_type=program_type)
     data = await state.get_data()
-    price = get_price(data["date"], data["time"], program_type)
-    await state.update_data(price=price)
-    await callback.message.edit_text(
-        f"🎯 Вы выбрали {program_type}. Цена: {price} ₽\n\nВведите адрес:"
+    program_type = data.get("program_type", "неизвестно")
+    await callback.answer(
+        f"❌ На это время нет свободных артистов для '{program_type}'. Выберите другое.",
+        show_alert=True,
     )
-    await state.set_state(OrderForm.address)
-    await callback.answer()
 
 
 @dp.message(OrderForm.address)
@@ -902,6 +813,7 @@ async def process_phone(message: Message, state: FSMContext):
     await state.set_state(OrderForm.comments)
 
 
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК КОММЕНТАРИЕВ (показывает ID) ===
 @dp.message(OrderForm.comments)
 async def process_comments(message: Message, state: FSMContext):
     await state.update_data(
