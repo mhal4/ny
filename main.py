@@ -24,10 +24,14 @@ BOT_TOKEN = "8406739433:AAGyexTjkz8yqBsiY-b8ItlEyrFEux9PohI"  # ← ВСТАВЬ
 ADMIN_CHAT_ID = 1062092565  # ← ТВОЙ TELEGRAM ID
 EXCEL_FILE = "orders.xlsx"  # Файл с оплаченными заказами
 TEMP_ORDERS_FILE = "temp_orders.json"  # Временные заказы до оплаты
+USER_ORDERS_FILE = "user_orders.json"  # Связь chat_id пользователя и order_id
+MANAGERS_FILE = "managers.json"  # Список chat_id менеджеров
+LAST_CLIENT_CHAT_FILE = "last_client_chat.json"  # Хранит последний chat_id клиента, которому писал менеджер (для /reply)
 
 # === МАКСИМАЛЬНОЕ КОЛ-ВО ПАР ПО ГОРОДАМ ===
 CITIES = {"Москва": 50, "СПб": 27}
 sale = 0.7 if datetime.now() < datetime(2025, 12, 1) else 1
+
 # === ИНИЦИАЛИЗАЦИЯ ===
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -40,6 +44,10 @@ class OrderForm(StatesGroup):
     child_name = State()
     phone = State()
     comments = State()
+
+
+class SupportForm(StatesGroup):
+    waiting_for_order_id = State()
 
 
 # === УПРАВЛЕНИЕ ВРЕМЕННЫМИ ЗАКАЗАМИ ===
@@ -157,7 +165,7 @@ def find_next_available_slots(start_date_str, city):
     return available
 
 
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ РАСЧЁТА ЦЕНЫ (с фиксированными ценами для 1 января ночью) ===
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ РАСЧЁТА ЦЕНЫ ===
 def get_price(date_str, time_str, program_type):
     """
     Возвращает цену по дате, времени и типу программы
@@ -170,142 +178,169 @@ def get_price(date_str, time_str, program_type):
     try:
         if "." in date_str:
             dt = datetime.strptime(date_str, "%d.%m.%Y")
-        elif "-" in date_str:
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
-        elif " " in date_str:
-            dt = datetime.strptime(date_str, "%d %B %Y")
         else:
-            dt = datetime.strptime(date_str, "%d/%m/%Y")
+            dt = datetime.strptime(date_str, "%d %B %Y")
 
-        # Извлекаем час из time_str
-        time_parts = time_str.split(":")
-        if len(time_parts) < 2:
-            print(f"Ошибка: Неверный формат времени '{time_str}'")
-            return 0
-        hour = int(time_parts[0])
-
-        # Цены для Экспресса (10 мин)
+        # Цены для Экспресса (10 мин) — условно из фото
         if program_type == "Экспресс (10 мин)":
             if dt < datetime(2025, 12, 25):
-                return 5600 * sale
+                return round(5600 * sale)  # или другая цена
             elif dt <= datetime(2025, 12, 27):
-                return 6400 * sale
+                return round(6400 * sale)
             elif dt == datetime(2025, 12, 28):
-                return 7000 * sale
+                return round(7000 * sale)
             elif dt == datetime(2025, 12, 29):
-                return 5475 * sale
+                return round(5475 * sale)
             elif dt == datetime(2025, 12, 30):
-                return 5175 * sale
+                return round(5175 * sale)
             elif dt == datetime(2025, 12, 31):
+                hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
-                    return 7700 * sale
+                    return round(7700 * sale)
                 elif 14 <= hour < 16:
-                    return 8150 * sale
+                    return round(8150 * sale)
                 elif 16 <= hour < 19:
-                    return 11975 * sale
+                    return round(11975 * sale)
                 elif 19 <= hour < 21:
-                    return 13800 * sale
+                    return round(13800 * sale)
                 elif 21 <= hour < 23:
-                    return 14925 * sale  # Исправлено: 13900 -> 14925 для 21-23
-                elif 23 <= hour:  # 23:00-00:00 31 декабря
-                    return 25200 * sale
-            elif dt.month == 1 and dt.day == 1:  # 1 января
-                if 0 <= hour < 3:  # 00:00-02:59
-                    return (
-                        25200 * sale
-                    )  # Используем высокую цену как для 31 декабря ночью
-                elif 3 <= hour < 6:  # 03:00-05:59
-                    return 15000 * sale  # Исправлено: 9000 -> 15000
-                elif dt.day in [1, 2]:  # 06:00 и далее 1 и 2 января
-                    return 7000 * sale
-                elif 3 <= dt.day <= 7:
-                    return 5600 * sale
-                else:
-                    return 5000 * sale
-            elif dt.month == 1 and dt.day in [2]:
-                return 7000 * sale
+                    return round(13900 * sale)
+                elif 23 <= hour:
+                    return round(25200 * sale)
+            elif dt.month == 1 and dt.day in [1, 2]:
+                if dt.day == 1 and dt.hour <= 1:
+                    return round(25200 * sale)
+                return round(7000 * sale)
             elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 5600 * sale
+                return round(5600 * sale)
+            elif dt.month == 1 and 8 <= dt.day <= 14:
+                return round(4200 * sale)
+            elif dt.month == 1 and 15 <= dt.day <= 21:
+                return round(3150 * sale)
+            elif dt.month == 1 and 22 <= dt.day <= 28:
+                return round(2520 * sale)
             else:
-                return 5000 * sale
+                return round(5000 * sale)
 
-        # Цены для Стандарта (30 мин)
+        # Цены для Стандарта (30 мин) — как "классика" из текста
         elif program_type == "Стандарт (30 мин)":
             if dt < datetime(2025, 12, 25):
-                return 7400 * sale
+                return round(7400 * sale)
             elif dt <= datetime(2025, 12, 27):
-                return 8000 * sale
+                return round(8000 * sale)
             elif dt == datetime(2025, 12, 28):
-                return 8400 * sale  # Исправлено: 8000 -> 8400
+                return round(8000 * sale)
             elif dt == datetime(2025, 12, 29):
-                return 6525 * sale
+                return round(6525 * sale)
             elif dt == datetime(2025, 12, 30):
-                return 6150 * sale
+                return round(6150 * sale)
             elif dt == datetime(2025, 12, 31):
+                hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
-                    return 8675 * sale
+                    return round(8675 * sale)
                 elif 14 <= hour < 16:
-                    return 9050 * sale
+                    return round(9050 * sale)
                 elif 16 <= hour < 19:
-                    return 13400 * sale
+                    return round(13400 * sale)
                 elif 19 <= hour < 21:
-                    return 15150 * sale
+                    return round(15150 * sale)
                 elif 21 <= hour < 23:
-                    return 16050 * sale
-                elif 23 <= hour:  # 23:00-00:00 31 декабря
-                    return 26250 * sale
-            elif dt.month == 1 and dt.day == 1:  # 1 января
-                if 0 <= hour < 3:  # 00:00-02:59
-                    return (150000 / 2) * sale  # Цена за 1 час -> 30 мин
-                elif 3 <= hour < 6:  # 03:00-05:59
-                    return (90000 / 2) * sale  # Цена за 1 час -> 30 мин
-                elif dt.day in [1, 2]:  # 06:00 и далее 1 и 2 января
-                    return 8500 * sale
-                elif 3 <= dt.day <= 7:
-                    return 7400 * sale
-                else:
-                    return 7000 * sale
-            elif dt.month == 1 and dt.day in [2]:
-                return 8500 * sale
+                    return round(16050 * sale)
+                elif 23 <= hour or hour < 1:
+                    return round(26250 * sale)
+            elif dt.month == 1 and dt.day in [1, 2]:
+                if dt.hour <= 1:
+                    return round(26250 * sale)
+                return round(8500 * sale)
             elif dt.month == 1 and 3 <= dt.day <= 7:
-                return 7400 * sale
+                return round(7400 * sale)
             else:
-                return 7000 * sale
+                return round(7000 * sale)
 
-        # Цены для Расширенного (1 час)
+        # Цены для Расширенного (1 час) — условно выше
         elif program_type == "Расширенный (1 час)":
-            if dt < datetime(2025, 12, 25):
-                return 17000 * sale
-            elif dt <= datetime(2025, 12, 28):  # 25, 26, 27, 28
-                return 17000 * sale
-            elif dt <= datetime(2025, 12, 30):  # 29, 30
-                return 22500 * sale
-            elif dt == datetime(2025, 12, 31):  # 31 декабря
-                return 50000 * sale
-            elif dt.month == 1 and dt.day == 1:  # 1 января
-                if 0 <= hour < 3:  # 00:00-02:59
-                    return 150000 * sale
-                elif 3 <= hour < 6:  # 03:00-05:59
-                    return 90000 * sale
-                else:  # 06:00-23:59
-                    return 16000 * sale
-            elif dt.month == 1 and dt.day in [2]:  # 2 января
-                return 16000 * sale
-            elif dt.month == 1 and dt.day in [3]:  # 3 января
-                return 16000 * sale
-            elif dt.month == 1 and 3 < dt.day <= 7:  # 4, 5, 6, 7 января
-                return 12000 * sale
-            else:
-                return 17000 * sale
+            if dt <= datetime(2025, 12, 28):
+                return round(17000 * sale)
+            elif dt <= datetime(2025, 12, 30):
+                return round(22500 * sale)
+            elif dt == datetime(2025, 12, 31):
+                return round(50000 * sale)
+            elif dt.month == 1 and dt.day in [1, 3]:
+                if dt.hour <= 3:
+                    return round(150000 * sale)
+                elif dt.hour <= 6:
+                    return round(90000 * sale)
+                return round(16000 * sale)
+            elif dt.month == 1 and 4 <= dt.day <= 7:
+                return round(12000 * sale)
 
     except Exception as e:
         print(f"Ошибка в get_price: {e}")
         return 0
 
 
+# === УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ И МЕНЕДЖЕРАМИ ===
+def get_user_order(chat_id):
+    """Возвращает order_id для chat_id, если есть"""
+    if not os.path.exists(USER_ORDERS_FILE):
+        return None
+    with open(USER_ORDERS_FILE, "r", encoding="utf-8") as f:
+        user_orders = json.load(f)
+    return user_orders.get(str(chat_id))
+
+
+def set_user_order(chat_id, order_id):
+    """Сохраняет связь chat_id -> order_id"""
+    user_orders = {}
+    if os.path.exists(USER_ORDERS_FILE):
+        with open(USER_ORDERS_FILE, "r", encoding="utf-8") as f:
+            user_orders = json.load(f)
+    user_orders[str(chat_id)] = order_id
+    with open(USER_ORDERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(user_orders, f, ensure_ascii=False, indent=2)
+
+
+def get_managers():
+    """Возвращает список chat_id менеджеров"""
+    if not os.path.exists(MANAGERS_FILE):
+        return []
+    with open(MANAGERS_FILE, "r", encoding="utf-8") as f:
+        managers = json.load(f)
+    return managers
+
+
+def add_manager(chat_id):
+    """Добавляет chat_id в список менеджеров"""
+    managers = get_managers()
+    if str(chat_id) not in managers:
+        managers.append(str(chat_id))
+        with open(MANAGERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(managers, f, ensure_ascii=False, indent=2)
+        return True
+    return False
+
+
+def get_last_client_chat(manager_chat_id):
+    """Возвращает последний chat_id клиента, которому писал менеджер"""
+    if not os.path.exists(LAST_CLIENT_CHAT_FILE):
+        return None
+    with open(LAST_CLIENT_CHAT_FILE, "r", encoding="utf-8") as f:
+        last_chats = json.load(f)
+    return last_chats.get(str(manager_chat_id))
+
+
+def set_last_client_chat(manager_chat_id, client_chat_id):
+    """Сохраняет последний chat_id клиента для менеджера"""
+    last_chats = {}
+    if os.path.exists(LAST_CLIENT_CHAT_FILE):
+        with open(LAST_CLIENT_CHAT_FILE, "r", encoding="utf-8") as f:
+            last_chats = json.load(f)
+    last_chats[str(manager_chat_id)] = str(client_chat_id)
+    with open(LAST_CLIENT_CHAT_FILE, "w", encoding="utf-8") as f:
+        json.dump(last_chats, f, ensure_ascii=False, indent=2)
+
+
 # === ИНЛАЙН-КЛАВИАТУРЫ ===
-
-
 def get_cities_keyboard():
     """
     Клавиатура для выбора города
@@ -334,58 +369,20 @@ def get_dates_keyboard():
     return kb.as_markup()
 
 
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ КЛАВИАТУРЫ ПРОГРАММЫ ===
-def get_programs_keyboard():
-    """
-    Клавиатура для выбора типа программы (синхронизирована с сайтом)
-    """
-    kb = InlineKeyboardBuilder()
-    kb.button(text="Экспресс (10 мин)", callback_data="program_10")
-    kb.button(text="Стандарт (30 мин)", callback_data="program_30")
-    kb.button(text="Расширенный (1 час)", callback_data="program_60")
-    kb.adjust(1)
-    return kb.as_markup()
-
-
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ВРЕМЕННЫХ СЛОТОВ (с учётом новых типов программ и ночи) ===
-def get_time_slots_keyboard(
-    date_str, city, program_type
-):  # Добавляем program_type как аргумент
+def get_time_slots_keyboard(date_str, city, program_type):
     """
     Клавиатура с временными слотами (с ценой и оставшимися парами)
-    Включает стандартные часы (14-21) и специальные для 31 декабря и 1 января (0-5, 23).
     """
     kb = InlineKeyboardBuilder()
     booked = get_booked_slots()
     max_slots = CITIES.get(city, 50)
 
-    try:
-        dt = datetime.strptime(date_str, "%d %B %Y")
-    except:
-        try:
-            dt = datetime.strptime(date_str, "%d.%m.%Y")
-        except:
-            print(f"Ошибка: Невозможно распознать дату '{date_str}'")
-            return kb.as_markup()
-
-    standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [22, 23]
-    night_hours_1st = [0, 1, 2, 3, 4, 5]
-
-    hours_to_generate = standard_hours[:]
-    if dt.date() == datetime(2025, 12, 31).date():
-        hours_to_generate.extend(night_hours_31)
-    elif dt.date() == datetime(2026, 1, 1).date():
-        hours_to_generate.extend(night_hours_1st)
-
-    for hour in hours_to_generate:
+    for hour in [14, 15, 16, 17, 18, 19, 20, 21]:
         time_str = f"{hour:02d}:00"
         slot_key = f"{date_str} {time_str}"
         booked_count = booked.get(slot_key, {}).get(city, 0)
         available_count = max_slots - booked_count
-        price = get_price(
-            date_str, time_str, program_type
-        )  # Передаём актуальный program_type
+        price = get_price(date_str, time_str, program_type)
 
         if available_count > 0:
             kb.button(
@@ -402,6 +399,17 @@ def get_time_slots_keyboard(
     return kb.as_markup()
 
 
+def get_programs_keyboard():
+    """
+    Клавиатура для выбора типа программы
+    """
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Экспресс (15 мин)", callback_data="program_15")
+    kb.button(text="Классика (30 мин)", callback_data="program_30")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def get_payment_keyboard(price):
     """
     Клавиатура с кнопкой "Оплатить"
@@ -412,20 +420,241 @@ def get_payment_keyboard(price):
     return kb.as_markup()
 
 
-# === ОБРАБОТЧИКИ БОТА ===
-
-
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК /start ===
 @dp.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     """
-    Начало работы с ботом — выбор города
+    Начало работы с ботом — выбор: сделать заказ или ввести ID
     """
-    await message.answer(
-        "🎄 Добро пожаловать! Выберите город:", reply_markup=get_cities_keyboard()
-    )
+    # Проверяем, является ли пользователь админом
+    if message.from_user.id == ADMIN_CHAT_ID:
+        kb = InlineKeyboardBuilder()
+        kb.button(text="📝 Сделать заказ", callback_data="new_order")
+        kb.button(text="🔑 Ввести ID заказа", callback_data="use_id")
+        kb.button(text="➕ Добавить менеджера", callback_data="add_manager_cmd")
+        kb.adjust(1)
+        await message.answer(
+            "🎄 Привет, админ! Выберите действие:", reply_markup=kb.as_markup()
+        )
+    else:
+        kb = InlineKeyboardBuilder()
+        kb.button(text="📝 Сделать заказ", callback_data="new_order")
+        kb.button(text="🔑 Ввести ID заказа", callback_data="use_id")
+        kb.adjust(1)
+        await message.answer(
+            "🎄 Добро пожаловать! Выберите действие:", reply_markup=kb.as_markup()
+        )
     await state.set_data({})  # Сброс состояния
+    await state.clear()  # Полная очистка
 
 
+# === ОБРАБОТЧИК КНОПКИ "СДЕЛАТЬ ЗАКАЗ" ===
+@dp.callback_query(F.data == "new_order")
+async def start_new_order(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        "🏙️ Выберите город:", reply_markup=get_cities_keyboard()
+    )
+    # Продолжаем старый FSM процесс
+    await state.set_data({"intent": "new_order"})
+    await callback.answer()
+
+
+# === ОБРАБОТЧИК КНОПКИ "ВВЕСТИ ID" ===
+@dp.callback_query(F.data == "use_id")
+async def prompt_for_order_id(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text("🔑 Пожалуйста, введите ID вашего заказа:")
+    await state.set_state(SupportForm.waiting_for_order_id)
+    await callback.answer()
+
+
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА ID ЗАКАЗА ===
+def find_order_by_id(order_id):
+    """
+    Ищет заказ по ID в temp_orders.json или orders.xlsx
+    Возвращает (data, source) или (None, None)
+    """
+    # Проверяем во временных заказах
+    if os.path.exists(TEMP_ORDERS_FILE):
+        with open(TEMP_ORDERS_FILE, "r", encoding="utf-8") as f:
+            temp_orders = json.load(f)
+        if order_id in temp_orders:
+            return temp_orders[order_id], "temp"
+
+    # Проверяем в оплаченных заказах
+    df = load_orders()
+    if not df.empty:
+        if "Order ID" in df.columns:
+            row = df[df["Order ID"] == order_id]
+            if not row.empty:
+                return row.iloc[0].to_dict(), "paid"
+    return None, None
+
+
+@dp.message(SupportForm.waiting_for_order_id)
+async def process_order_id(message: Message, state: FSMContext):
+    order_id = message.text.strip()
+    if not order_id:
+        await message.answer("❌ ID заказа не может быть пустым. Попробуйте снова.")
+        return
+
+    order_data, source = find_order_by_id(order_id)
+    if not order_data:
+        await message.answer(
+            "❌ Заказ с таким ID не найден. Проверьте ID и попробуйте снова."
+        )
+        await state.clear()
+        return
+
+    # Сохраняем связь chat_id -> order_id
+    set_user_order(message.chat.id, order_id)
+    await state.clear()  # Сбрасываем FSM
+
+    # Отправляем информацию о заказе
+    await message.answer(
+        f"✅ Вы успешно привязаны к заказу #{order_id}.\n\n"
+        f"Информация о заказе:\n"
+        f"Кого: {order_data.get('Кого пригласить', 'N/A')}\n"
+        f"Город: {order_data.get('Город', 'N/A')}\n"
+        f"Дата: {order_data.get('Дата визита', 'N/A')}\n"
+        f"Время: {order_data.get('Время визита', 'N/A')}\n"
+        f"Программа: {order_data.get('Тип программы', 'N/A')}\n"
+        f"Цена: {order_data.get('Цена', 'N/A')} ₽\n"
+        f"Адрес: {order_data.get('Адрес', 'N/A')}\n"
+        f"Детей: {order_data.get('Количество детей', 'N/A')}\n"
+        f"Имя ребёнка: {order_data.get('Имя ребёнка', 'N/A')}\n"
+        f"Телефон: {order_data.get('Телефон', 'N/A')}\n"
+        f"Пожелания: {order_data.get('Пожелания', 'N/A')}\n\n"
+        f"Теперь вы можете задавать вопросы по этому заказу, и мы постараемся вам помочь."
+    )
+
+
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ТЕКСТА (для поддержки по ID и ответов менеджера) ===
+@dp.message(F.text)
+async def handle_message(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    # Если FSM активен (например, заполняем форму), не трогаем
+    if current_state and not current_state.startswith("SupportForm"):
+        data = await state.get_data()
+        if data.get("intent") == "new_order":
+            # Это значит, что FSM для нового заказа активен
+            # Логика для OrderForm должна быть в соответствующих обработчиках
+            # Этот хендлер сработает, если сообщение не подошло под другие
+            # Для простоты, если FSM активен и intent не support, выходим
+            return
+
+    # Проверяем, является ли отправитель админом
+    if message.from_user.id == ADMIN_CHAT_ID:
+        # Проверяем, начинается ли сообщение с /add_manager
+        if message.text.startswith("/add_manager"):
+            try:
+                # /add_manager 123456789
+                parts = message.text.split()
+                if len(parts) != 2:
+                    await message.answer("❌ Используйте: /add_manager <chat_id>")
+                    return
+                new_manager_id = int(parts[1])
+                if add_manager(new_manager_id):
+                    await message.answer(
+                        f"✅ Пользователь {new_manager_id} добавлен как менеджер."
+                    )
+                else:
+                    await message.answer(
+                        f"⚠️ Пользователь {new_manager_id} уже является менеджером."
+                    )
+            except ValueError:
+                await message.answer("❌ Неверный формат chat_id. Укажите число.")
+        # Проверяем, начинается ли сообщение с /reply_to
+        elif message.text.startswith("/reply_to"):
+            # /reply_to 123456789 тут текст ответа
+            try:
+                # Разбиваем по первому пробелу после /reply_to
+                command_part, rest = message.text.split(" ", 1)
+                client_id_str, reply_text = rest.split(" ", 1)
+                client_chat_id = int(client_id_str)
+                # Отправляем ответ клиенту
+                await bot.send_message(
+                    client_chat_id, f"Ответ от поддержки:\n{reply_text}"
+                )
+                # Отправляем копию админу
+                await message.answer(
+                    f"✅ Ответ отправлен клиенту {client_chat_id} и копия сохранена."
+                )
+                await bot.send_message(
+                    ADMIN_CHAT_ID,
+                    f"Копия ответа админа клиенту {client_chat_id}:\n{reply_text}",
+                )
+            except ValueError:
+                await message.answer(
+                    "❌ Неверный формат. Используйте: /reply_to <chat_id> <текст>"
+                )
+            except Exception as e:
+                await message.answer(f"❌ Ошибка при отправке: {e}")
+        return  # Выходим, если это команда админа
+
+    # Проверяем, является ли отправитель менеджером
+    if str(message.from_user.id) in get_managers():
+        # Менеджер пишет
+        # Если сообщение содержит только числа, возможно, это chat_id клиента
+        if message.text.isdigit():
+            client_chat_id = int(message.text)
+            # Проверим, существует ли такой пользователь с привязанным заказом
+            # Это необязательно, можно просто сохранить как последнего
+            set_last_client_chat(message.from_user.id, client_chat_id)
+            await message.answer(
+                f"✅ Установлен чат с клиентом {client_chat_id} как последний для ответа."
+            )
+            return
+
+        # Иначе, это, вероятно, ответ менеджера
+        last_client_id = get_last_client_chat(message.from_user.id)
+        if last_client_id:
+            try:
+                # Отправляем ответ клиенту
+                await bot.send_message(
+                    int(last_client_id), f"Ответ от менеджера:\n{message.text}"
+                )
+                # Отправляем копию админу
+                await message.answer(
+                    f"✅ Ответ отправлен клиенту {last_client_id} и копия сохранена админу."
+                )
+                await bot.send_message(
+                    ADMIN_CHAT_ID,
+                    f"Копия ответа менеджера (ID: {message.from_user.id}) клиенту {last_client_id}:\n{message.text}",
+                )
+            except Exception as e:
+                await message.answer(f"❌ Ошибка при отправке ответа: {e}")
+        else:
+            await message.answer(
+                "❌ Неизвестно, кому отвечать. Напишите сначала ID клиента или используйте /reply_to через админа."
+            )
+        return  # Выходим, если это менеджер
+
+    # Если не админ и не менеджер, проверяем, привязан ли чат к заказу
+    user_order_id = get_user_order(message.chat.id)
+    if user_order_id:
+        # Перенаправляем сообщение админу и/или менеджерам
+        await message.answer("💬 Ваше сообщение передано в поддержку по заказу.")
+        # Отправить админу
+        await bot.send_message(
+            ADMIN_CHAT_ID,
+            f"Сообщение от клиента (chat_id: {message.chat.id}, order_id: {user_order_id}):\n{message.text}",
+        )
+        # Отправить всем менеджерам
+        managers = get_managers()
+        for manager_id in managers:
+            try:
+                await bot.send_message(
+                    int(manager_id),
+                    f"Новое сообщение от клиента (chat_id: {message.chat.id}, order_id: {user_order_id}):\n{message.text}\n\n(Для ответа напишите сначала chat_id клиента, затем сообщение)",
+                )
+            except Exception as e:
+                print(f"Ошибка отправки менеджеру {manager_id}: {e}")
+    else:
+        # Если нет связи и FSM неактивен, возможно, пользователь просто пишет
+        await message.answer("Привет! Используйте /start, чтобы начать.")
+
+
+# === ОБРАБОТЧИКИ БОТА (старые) ===
 @dp.callback_query(F.data.startswith("city_"))
 async def select_city(callback: CallbackQuery, state: FSMContext):
     """
@@ -439,79 +668,68 @@ async def select_city(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ДАТЫ (теперь запрашивает программу) ===
 @dp.callback_query(F.data.startswith("date_"))
 async def select_date(callback: CallbackQuery, state: FSMContext):
     """
-    Выбор даты через инлайн-кнопку. Сохраняет дату и запрашивает программу.
+    Выбор даты через инлайн-кнопку
     """
     date_str = callback.data.replace("date_", "")
     await state.update_data(date=date_str)
+    data = await state.get_data()
+    kb = get_time_slots_keyboard(
+        date_str, data["city"], data.get("program_type", "Экспресс (15 мин)")
+    )
     await callback.message.edit_text(
-        f"📅 Вы выбрали {date_str}. Теперь выберите тип программы:",
-        reply_markup=get_programs_keyboard(),  # Показываем клавиатуру с программами
+        f"📅 Вы выбрали {date_str}. Выберите время:", reply_markup=kb
     )
     await callback.answer()
 
 
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ПРОГРАММЫ (теперь запрашивает время) ===
+@dp.callback_query(F.data.startswith("time_"))
+async def select_time(callback: CallbackQuery, state: FSMContext):
+    """
+    Выбор времени через инлайн-кнопку
+    """
+    time_str = callback.data.replace("time_", "")
+    await state.update_data(time=time_str)
+    await callback.message.edit_text(
+        f"⏰ Вы выбрали {time_str}. Выберите программу:",
+        reply_markup=get_programs_keyboard(),
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("unavailable_"))
+async def unavailable_time(callback: CallbackQuery):
+    """
+    Обработка нажатия на "занятое" время
+    """
+    await callback.answer(
+        "❌ На это время нет свободных артистов. Выберите другое.", show_alert=True
+    )
+
+
 @dp.callback_query(F.data.startswith("program_"))
 async def select_program(callback: CallbackQuery, state: FSMContext):
     """
-    Выбор программы. Сохраняет программу и запрашивает время.
+    Выбор программы (экспресс/классика) через инлайн-кнопку
     """
     program_map = {
-        "program_10": "Экспресс (10 мин)",
-        "program_30": "Стандарт (30 мин)",
-        "program_60": "Расширенный (1 час)",
+        "program_15": "Экспресс (15 мин)",
+        "program_30": "Классическая (30 мин)",
     }
     program_type = program_map.get(callback.data)
     if not program_type:
         return
     await state.update_data(program_type=program_type)
     data = await state.get_data()
-    date_str = data["date"]
-    city = data["city"]
-
-    # Генерируем слоты времени с учётом выбранной программы
-    await callback.message.edit_text(
-        f"🎯 Вы выбрали {program_type}. Теперь выберите время:",
-        reply_markup=get_time_slots_keyboard(date_str, city, program_type),
-    )
-    await callback.answer()
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ВРЕМЕНИ (теперь завершает выбор и показывает цену) ===
-@dp.callback_query(F.data.startswith("time_"))
-async def select_time(callback: CallbackQuery, state: FSMContext):
-    """
-    Выбор времени через инлайн-кнопку. Сохраняет время и показывает цену.
-    """
-    time_str = callback.data.replace("time_", "")
-    await state.update_data(time=time_str)
-    data = await state.get_data()
-    price = get_price(data["date"], time_str, data["program_type"])
+    price = get_price(data["date"], data["time"], program_type)
     await state.update_data(price=price)
-
     await callback.message.edit_text(
-        f"⏰ Вы выбрали {time_str}. Цена: {price} ₽\n\nВведите адрес:"
+        f"🎯 Вы выбрали {program_type}. Цена: {price} ₽\n\nВведите адрес:"
     )
     await state.set_state(OrderForm.address)
     await callback.answer()
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК "НЕТ МЕСТ" (теперь с программой) ===
-@dp.callback_query(F.data.startswith("unavailable_"))
-async def unavailable_time(callback: CallbackQuery, state: FSMContext):
-    """
-    Обработка нажатия на "занятое" время. Показывает сообщение с учётом программы.
-    """
-    data = await state.get_data()
-    program_type = data.get("program_type", "неизвестно")
-    await callback.answer(
-        f"❌ На это время нет свободных артистов для '{program_type}'. Выберите другое.",
-        show_alert=True,
-    )
 
 
 @dp.message(OrderForm.address)
@@ -561,17 +779,14 @@ async def process_comments(message: Message, state: FSMContext):
         comments=message.text if message.text.lower() != "нет" else "-"
     )
     data = await state.get_data()
-
     # Генерируем ID для временного заказа
-    order_id = str(uuid.uuid4())
+    order_id = str(uuid.uuid4())  # <-- ГЕНЕРАЦИЯ ORDER_ID
     temp_data = {**data, "order_id": order_id}
     save_temp_order(order_id, temp_data)
-
     price = data["price"]
     kb = get_payment_keyboard(price)
-
     await message.answer(
-        f"🎉 Заказ готов к оплате!\n\n"
+        f"🎉 Заказ готов к оплате!\n"
         f"Кого: Дед Мороз и Снегурочка\n"
         f"Город: {data['city']}\n"
         f"Дата: {data['date']}\n"
@@ -582,7 +797,8 @@ async def process_comments(message: Message, state: FSMContext):
         f"Детей: {data['children_count']}\n"
         f"Имя: {data['child_name']}\n"
         f"Телефон: {data['phone']}\n"
-        f"Пожелания: {data['comments']}\n\n"
+        f"Пожелания: {data['comments']}\n"
+        f"ID заказа: {order_id}\n\n"  # <-- ПОКАЗ ID ЗАКАЗА
         f"Нажмите кнопку ниже для оплаты:",
         reply_markup=kb,
     )
@@ -612,6 +828,7 @@ def save_order_to_excel(data):
         df = pd.read_excel(EXCEL_FILE)
 
     new_row = {
+        "Order ID": data.get("order_id", "N/A"),  # <-- ДОБАВЛЯЕМ Order ID
         "Дата и время заказа": datetime.now().strftime("%d.%m.%Y %H:%M"),
         "Кого пригласить": "Дед Мороз и Снегурочка",  # Всегда пара
         "Город": data.get("city", "Москва"),
@@ -638,7 +855,7 @@ async def handle_temp_order(request):
     """
     try:
         data = await request.json()
-        order_id = str(uuid.uuid4())
+        order_id = str(uuid.uuid4())  # <-- ГЕНЕРАЦИЯ ORDER_ID
         temp_data = {**data, "order_id": order_id}
         save_temp_order(order_id, temp_data)
         return web.json_response({"status": "ok", "order_id": order_id})
@@ -718,6 +935,7 @@ if __name__ == "__main__":
     if not os.path.exists(EXCEL_FILE):
         pd.DataFrame(
             columns=[
+                "Order ID",  # <-- ДОБАВЛЕН СТОЛБЕЦ
                 "Дата и время заказа",
                 "Кого пригласить",
                 "Город",
@@ -739,5 +957,21 @@ if __name__ == "__main__":
         with open(TEMP_ORDERS_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f)
         print(f"✅ Создан файл {TEMP_ORDERS_FILE}")
+
+    # Создаём файлы для поддержки, если их нет
+    if not os.path.exists(USER_ORDERS_FILE):
+        with open(USER_ORDERS_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+        print(f"✅ Создан файл {USER_ORDERS_FILE}")
+
+    if not os.path.exists(MANAGERS_FILE):
+        with open(MANAGERS_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)  # Массив chat_id
+        print(f"✅ Создан файл {MANAGERS_FILE}")
+
+    if not os.path.exists(LAST_CLIENT_CHAT_FILE):
+        with open(LAST_CLIENT_CHAT_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+        print(f"✅ Создан файл {LAST_CLIENT_CHAT_FILE}")
 
     asyncio.run(main())
