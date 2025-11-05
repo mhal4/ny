@@ -331,7 +331,7 @@
             return `${day} ${month} ${year}`;
         }
 
-        // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой, через новый API) ===
+                // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой, через новый API) ===
         async function updateTimeSlots() {
             const dateInput = document.getElementById('date');
             const dateValue = dateInput.value; // Это будет в формате YYYY-MM-DD
@@ -360,12 +360,17 @@
                 return; // Не продолжаем, если дата вне диапазона
             }
 
+            // --- ИСПРАВЛЕНО: Отправляем дату в нужном формате ---
             const displayDate = formatDateToDisplay(dateValue);
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
             const city = document.getElementById('city').value;
 
             try {
                 // Запрашиваем все временные слоты с ценами и доступностью с сервера
+                // --- ИСПРАВЛЕНО: Используем displayDate ---
                 const res = await fetch(`/api/time_slots?date=${encodeURIComponent(displayDate)}&city=${encodeURIComponent(city)}&program_type=${encodeURIComponent(program.value)}`);
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 if (!res.ok) {
                     throw new Error(`Ошибка API: ${res.status}`);
                 }

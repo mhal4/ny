@@ -503,6 +503,165 @@ async def cmd_start(message: Message, state: FSMContext):
     await state.clear()  # Полная очистка
 
 
+# === НОВЫЙ ОБРАБОТЧИК КНОПКИ "ДОБАВИТЬ МЕНЕДЖЕРА" ===
+@dp.callback_query(F.data == "add_manager_cmd")
+async def prompt_add_manager(callback: CallbackQuery):
+    """
+    Отправляет админу инструкцию, как добавить менеджера.
+    """
+    if callback.from_user.id != ADMIN_CHAT_ID:
+        await callback.answer("❌ У вас нет прав для этого действия.", show_alert=True)
+        return
+    await callback.message.edit_text(
+        "➕ Чтобы добавить менеджера, отправьте мне его chat_id в формате:\n`/add_manager <chat_id>`\n\n"
+        "Например: `/add_manager 123456789`",
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
+
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК КОМАНДЫ /add_manager ===
+@dp.message(Command("add_manager"))
+async def cmd_add_manager(message: Message):
+    """
+    Обработчик команды /add_manager. Добавляет chat_id в список менеджеров.
+    """
+    if message.from_user.id != ADMIN_CHAT_ID:
+        await message.answer("❌ У вас нет прав для этого действия.")
+        return
+
+    try:
+        # /add_manager 123456789
+        parts = message.text.split()
+        if len(parts) != 2:
+            await message.answer("❌ Используйте: /add_manager <chat_id>")
+            return
+        new_manager_id = int(parts[1])
+        if add_manager(new_manager_id):
+            await message.answer(
+                f"✅ Пользователь {new_manager_id} добавлен как менеджер."
+            )
+        else:
+            await message.answer(
+                f"⚠️ Пользователь {new_manager_id} уже является менеджером."
+            )
+    except ValueError:
+        await message.answer("❌ Неверный формат chat_id. Укажите число.")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {e}")
+
+
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ТЕКСТА (для поддержки по ID и ответов менеджера) ===
+@dp.message(F.text)
+async def handle_message(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    # Если FSM активен (например, заполняем форму), не трогаем
+    if current_state and not current_state.startswith("SupportForm"):
+        data = await state.get_data()
+        if data.get("intent") == "new_order":
+            # Это значит, что FSM для нового заказа активен
+            # Логика для OrderForm должна быть в соответствующих обработчиках
+            # Этот хендлер сработает, только если сообщение не подошло под другие
+            # Для простоты, если FSM активен и intent не support, выходим
+            return
+
+    # Проверяем, является ли отправитель админом
+    if message.from_user.id == ADMIN_CHAT_ID:
+        # Команды админа, кроме /add_manager, обрабатываются отдельно
+        # или можно проверить здесь, если не хочется отдельный хендлер
+        # Но /add_manager уже обработан выше как команда
+        # Проверяем, начинается ли сообщение с /reply_to
+        if message.text.startswith("/reply_to"):
+            # /reply_to 123456789 тут текст ответа
+            try:
+                # Разбиваем по первому пробелу после /reply_to
+                command_part, rest = message.text.split(" ", 1)
+                client_id_str, reply_text = rest.split(" ", 1)
+                client_chat_id = int(client_id_str)
+                # Отправляем ответ клиенту
+                await bot.send_message(
+                    client_chat_id, f"Ответ от поддержки:\n{reply_text}"
+                )
+                # Отправляем копию админу
+                await message.answer(
+                    f"✅ Ответ отправлен клиенту {client_chat_id} и копия сохранена."
+                )
+                await bot.send_message(
+                    ADMIN_CHAT_ID,
+                    f"Копия ответа админа клиенту {client_chat_id}:\n{reply_text}",
+                )
+            except ValueError:
+                await message.answer(
+                    "❌ Неверный формат. Используйте: /reply_to <chat_id> <текст>"
+                )
+            except Exception as e:
+                await message.answer(f"❌ Ошибка при отправке: {e}")
+        # Не обрабатываем просто текст админа как команду
+        return  # Выходим, если это админ и не команда FSM
+
+    # Проверяем, является ли отправитель менеджером
+    if str(message.from_user.id) in get_managers():
+        # Менеджер пишет
+        # Если сообщение содержит только числа, возможно, это chat_id клиента
+        if message.text.isdigit():
+            client_chat_id = int(message.text)
+            # Проверим, существует ли такой пользователь с привязанным заказом
+            # Это необязательно, можно просто сохранить как последнего
+            set_last_client_chat(message.from_user.id, client_chat_id)
+            await message.answer(
+                f"✅ Установлен чат с клиентом {client_chat_id} как последний для ответа."
+            )
+            return
+
+        # Иначе, это, вероятно, ответ менеджера
+        last_client_id = get_last_client_chat(message.from_user.id)
+        if last_client_id:
+            try:
+                # Отправляем ответ клиенту
+                await bot.send_message(
+                    int(last_client_id), f"Ответ от менеджера:\n{message.text}"
+                )
+                # Отправляем копию админу
+                await message.answer(
+                    f"✅ Ответ отправлен клиенту {last_client_id} и копия сохранена админу."
+                )
+                await bot.send_message(
+                    ADMIN_CHAT_ID,
+                    f"Копия ответа менеджера (ID: {message.from_user.id}) клиенту {last_client_id}:\n{message.text}",
+                )
+            except Exception as e:
+                await message.answer(f"❌ Ошибка при отправке ответа: {e}")
+        else:
+            await message.answer(
+                "❌ Неизвестно, кому отвечать. Напишите сначала ID клиента или используйте /reply_to через админа."
+            )
+        return  # Выходим, если это менеджер
+
+    # Если не админ и не менеджер, проверяем, привязан ли чат к заказу
+    user_order_id = get_user_order(message.chat.id)
+    if user_order_id:
+        # Перенаправляем сообщение админу и/или менеджерам
+        await message.answer("💬 Ваше сообщение передано в поддержку по заказу.")
+        # Отправить админу
+        await bot.send_message(
+            ADMIN_CHAT_ID,
+            f"Сообщение от клиента (chat_id: {message.chat.id}, order_id: {user_order_id}):\n{message.text}",
+        )
+        # Отправить всем менеджерам
+        managers = get_managers()
+        for manager_id in managers:
+            try:
+                await bot.send_message(
+                    int(manager_id),
+                    f"Новое сообщение от клиента (chat_id: {message.chat.id}, order_id: {user_order_id}):\n{message.text}\n\n(Для ответа напишите сначала chat_id клиента, затем сообщение)",
+                )
+            except Exception as e:
+                print(f"Ошибка отправки менеджеру {manager_id}: {e}")
+    else:
+        # Если нет связи и FSM неактивен, возможно, пользователь просто пишет
+        await message.answer("Привет! Используйте /start, чтобы начать.")
+
+
 # === ОБРАБОТЧИК КНОПКИ "ВВЕСТИ ID" ===
 @dp.callback_query(F.data == "use_id")
 async def prompt_for_order_id(callback: CallbackQuery, state: FSMContext):
@@ -865,12 +1024,35 @@ async def handle_time_slots(request):
         except:
             return web.json_response({"error": "Неверный формат даты"}, status=400)
 
+        # --- НОВОЕ: Попробуем распарсить оба формата даты ---
+        dt = None
+        try:
+            # Попробуем формат DD Month YYYY
+            dt = datetime.strptime(date, "%d %B %Y")
+        except ValueError:
+            try:
+                # Попробуем формат YYYY-MM-DD
+                dt = datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                try:
+                    # Попробуем формат DD.MM.YYYY
+                    dt = datetime.strptime(date, "%d.%m.%Y")
+                except ValueError:
+                    return web.json_response(
+                        {
+                            "error": "Неверный формат даты. Ожидается DD Month YYYY, YYYY-MM-DD или DD.MM.YYYY"
+                        },
+                        status=400,
+                    )
+
+    # --- КОНЕЦ НОВОГО ---
+
     booked = get_booked_slots()
     max_slots = CITIES.get(city, 50)
 
     # Список часов для генерации слотов (включая ночные)
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [23]  # 23:00-00:00
+    night_hours_31 = [22, 23]  # 22:00-00:00
     night_hours_1st = [0, 1, 2, 3, 4, 5]  # 00:00-01:00, 01:00-02:00, ..., 05:00-06:00
 
     hours_to_generate = standard_hours[:]
