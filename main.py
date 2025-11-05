@@ -178,8 +178,12 @@ def get_price(date_str, time_str, program_type):
     try:
         if "." in date_str:
             dt = datetime.strptime(date_str, "%d.%m.%Y")
-        else:
+        elif "-" in date_str:
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+        elif " " in date_str:
             dt = datetime.strptime(date_str, "%d %B %Y")
+        else:
+            dt = datetime.strptime(date_str, "%d/%m/%Y")
 
         # Цены для Экспресса (10 мин) — условно из фото
         if program_type == "Экспресс (10 мин)":
@@ -372,17 +376,39 @@ def get_dates_keyboard():
 def get_time_slots_keyboard(date_str, city, program_type):
     """
     Клавиатура с временными слотами (с ценой и оставшимися парами)
+    Включает стандартные часы (14-21) и специальные для 31 декабря и 1 января (0-5, 23).
     """
     kb = InlineKeyboardBuilder()
     booked = get_booked_slots()
     max_slots = CITIES.get(city, 50)
 
-    for hour in [14, 15, 16, 17, 18, 19, 20, 21]:
+    try:
+        dt = datetime.strptime(date_str, "%d %B %Y")
+    except:
+        try:
+            dt = datetime.strptime(date_str, "%d.%m.%Y")
+        except:
+            print(f"Ошибка: Невозможно распознать дату '{date_str}'")
+            return kb.as_markup()
+
+    standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
+    night_hours_31 = [23]
+    night_hours_1st = [0, 1, 2, 3, 4, 5]
+
+    hours_to_generate = standard_hours[:]
+    if dt.date() == datetime(2025, 12, 31).date():
+        hours_to_generate.extend(night_hours_31)
+    elif dt.date() == datetime(2026, 1, 1).date():
+        hours_to_generate.extend(night_hours_1st)
+
+    for hour in hours_to_generate:
         time_str = f"{hour:02d}:00"
         slot_key = f"{date_str} {time_str}"
         booked_count = booked.get(slot_key, {}).get(city, 0)
         available_count = max_slots - booked_count
-        price = get_price(date_str, time_str, program_type)
+        price = get_price(
+            date_str, time_str, program_type
+        )  # Передаём актуальный program_type
 
         if available_count > 0:
             kb.button(
@@ -401,11 +427,12 @@ def get_time_slots_keyboard(date_str, city, program_type):
 
 def get_programs_keyboard():
     """
-    Клавиатура для выбора типа программы
+    Клавиатура для выбора типа программы (синхронизирована с сайтом)
     """
     kb = InlineKeyboardBuilder()
-    kb.button(text="Экспресс (15 мин)", callback_data="program_15")
-    kb.button(text="Классика (30 мин)", callback_data="program_30")
+    kb.button(text="Экспресс (10 мин)", callback_data="program_10")
+    kb.button(text="Стандарт (30 мин)", callback_data="program_30")
+    kb.button(text="Расширенный (1 час)", callback_data="program_60")
     kb.adjust(1)
     return kb.as_markup()
 
