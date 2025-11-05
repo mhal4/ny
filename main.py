@@ -147,7 +147,7 @@ def find_next_available_slots(start_date_str, city):
         try:
             today = datetime.strptime(start_date_str, "%d.%m.%Y")
         except:
-            today = datetime.now()
+            today = datetime.strptime(start_date_str, "%Y-%m-%d")
 
     available = []
     for i in range(1, 8):
@@ -165,7 +165,7 @@ def find_next_available_slots(start_date_str, city):
     return available
 
 
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ РАСЧЁТА ЦЕНЫ ===
+# === ОБНОВЛЁННАЯ ФУНКЦИЯ РАСЧЁТА ЦЕНЫ (с ночью 31.12 -> 01.01) ===
 def get_price(date_str, time_str, program_type):
     """
     Возвращает цену по дате, времени и типу программы
@@ -180,15 +180,20 @@ def get_price(date_str, time_str, program_type):
             dt = datetime.strptime(date_str, "%d.%m.%Y")
         elif "-" in date_str:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
-        elif " " in date_str:
-            dt = datetime.strptime(date_str, "%d %B %Y")
         else:
-            dt = datetime.strptime(date_str, "%d/%m/%Y")
+            dt = datetime.strptime(date_str, "%d %B %Y")
+
+        # Извлекаем час из time_str
+        time_parts = time_str.split(":")
+        if len(time_parts) < 2:
+            print(f"Ошибка: Неверный формат времени '{time_str}'")
+            return 0
+        hour = int(time_parts[0])
 
         # Цены для Экспресса (10 мин) — условно из фото
         if program_type == "Экспресс (10 мин)":
             if dt < datetime(2025, 12, 25):
-                return round(5600 * sale)  # или другая цена
+                return round(5600 * sale)
             elif dt <= datetime(2025, 12, 27):
                 return round(6400 * sale)
             elif dt == datetime(2025, 12, 28):
@@ -198,7 +203,6 @@ def get_price(date_str, time_str, program_type):
             elif dt == datetime(2025, 12, 30):
                 return round(5175 * sale)
             elif dt == datetime(2025, 12, 31):
-                hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
                     return round(7700 * sale)
                 elif 14 <= hour < 16:
@@ -208,21 +212,26 @@ def get_price(date_str, time_str, program_type):
                 elif 19 <= hour < 21:
                     return round(13800 * sale)
                 elif 21 <= hour < 23:
-                    return round(13900 * sale)
-                elif 23 <= hour:
+                    return round(14925 * sale)  # Исправлено: 13900 -> 14925 для 21-23
+                elif 23 <= hour:  # 23:00-00:00 31 декабря
                     return round(25200 * sale)
-            elif dt.month == 1 and dt.day in [1, 2]:
-                if dt.day == 1 and dt.hour <= 1:
-                    return round(25200 * sale)
+            elif dt.month == 1 and dt.day == 1:  # 1 января
+                if 0 <= hour < 3:  # 00:00-02:59
+                    return round(
+                        25200 * sale
+                    )  # Используем высокую цену как для 31 декабря ночью
+                elif 3 <= hour < 6:  # 03:00-05:59
+                    return round(15000 * sale)  # Исправлено: 9000 -> 15000
+                elif dt.day in [1, 2]:  # 06:00 и далее 1 и 2 января
+                    return round(7000 * sale)
+                elif 3 <= dt.day <= 7:
+                    return round(5600 * sale)
+                else:
+                    return round(5000 * sale)
+            elif dt.month == 1 and dt.day in [2]:
                 return round(7000 * sale)
             elif dt.month == 1 and 3 <= dt.day <= 7:
                 return round(5600 * sale)
-            elif dt.month == 1 and 8 <= dt.day <= 14:
-                return round(4200 * sale)
-            elif dt.month == 1 and 15 <= dt.day <= 21:
-                return round(3150 * sale)
-            elif dt.month == 1 and 22 <= dt.day <= 28:
-                return round(2520 * sale)
             else:
                 return round(5000 * sale)
 
@@ -233,13 +242,12 @@ def get_price(date_str, time_str, program_type):
             elif dt <= datetime(2025, 12, 27):
                 return round(8000 * sale)
             elif dt == datetime(2025, 12, 28):
-                return round(8000 * sale)
+                return round(8400 * sale)  # Исправлено: 8000 -> 8400
             elif dt == datetime(2025, 12, 29):
                 return round(6525 * sale)
             elif dt == datetime(2025, 12, 30):
                 return round(6150 * sale)
             elif dt == datetime(2025, 12, 31):
-                hour = int(time_str.split(":")[0])
                 if 9 <= hour < 14:
                     return round(8675 * sale)
                 elif 14 <= hour < 16:
@@ -250,33 +258,51 @@ def get_price(date_str, time_str, program_type):
                     return round(15150 * sale)
                 elif 21 <= hour < 23:
                     return round(16050 * sale)
-                elif 23 <= hour or hour < 1:
+                elif 23 <= hour:  # 23:00-00:00 31 декабря
                     return round(26250 * sale)
-            elif dt.month == 1 and dt.day in [1, 2]:
-                if dt.hour <= 1:
-                    return round(26250 * sale)
+            elif dt.month == 1 and dt.day == 1:  # 1 января
+                if 0 <= hour < 3:  # 00:00-02:59
+                    return round((150000 / 2) * sale)  # Цена за 1 час -> 30 мин
+                elif 3 <= hour < 6:  # 03:00-05:59
+                    return round((90000 / 2) * sale)  # Цена за 1 час -> 30 мин
+                elif dt.day in [1, 2]:  # 06:00 и далее 1 и 2 января
+                    return round(8500 * sale)
+                elif 3 <= dt.day <= 7:
+                    return round(7400 * sale)
+                else:
+                    return round(7000 * sale)
+            elif dt.month == 1 and dt.day in [2]:
                 return round(8500 * sale)
             elif dt.month == 1 and 3 <= dt.day <= 7:
                 return round(7400 * sale)
             else:
                 return round(7000 * sale)
 
-        # Цены для Расширенной (1 час) — условно выше
-        elif program_type == "Расширенная (60 мин)":
-            if dt <= datetime(2025, 12, 28):
+        # Цены для Расширенного (1 час) — условно выше
+        elif program_type == "Расширенный (1 час)":
+            if dt < datetime(2025, 12, 25):
                 return round(17000 * sale)
-            elif dt <= datetime(2025, 12, 30):
+            elif dt <= datetime(2025, 12, 28):  # 25, 26, 27, 28
+                return round(17000 * sale)
+            elif dt <= datetime(2025, 12, 30):  # 29, 30
                 return round(22500 * sale)
-            elif dt == datetime(2025, 12, 31):
+            elif dt == datetime(2025, 12, 31):  # 31 декабря
                 return round(50000 * sale)
-            elif dt.month == 1 and dt.day in [1, 3]:
-                if dt.hour <= 3:
+            elif dt.month == 1 and dt.day == 1:  # 1 января
+                if 0 <= hour < 3:  # 00:00-02:59
                     return round(150000 * sale)
-                elif dt.hour <= 6:
+                elif 3 <= hour < 6:  # 03:00-05:59
                     return round(90000 * sale)
+                else:  # 09:00-23:59
+                    return round(16000 * sale)  # "С 1 -3 января 16000"
+            elif dt.month == 1 and dt.day in [2]:  # 2 января
                 return round(16000 * sale)
-            elif dt.month == 1 and 4 <= dt.day <= 7:
+            elif dt.month == 1 and dt.day in [3]:  # 3 января
+                return round(16000 * sale)
+            elif dt.month == 1 and 3 < dt.day <= 7:  # 4, 5, 6, 7 января
                 return round(12000 * sale)
+            else:
+                return round(17000 * sale)
 
     except Exception as e:
         print(f"Ошибка в get_price: {e}")
@@ -356,7 +382,6 @@ def get_cities_keyboard():
     return kb.as_markup()
 
 
-# === ОБНОВЛЁННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ ДАТ ===
 def get_dates_keyboard():
     """
     Клавиатура с датами с 25.12.2025 по 07.01.2026
@@ -389,16 +414,17 @@ def get_time_slots_keyboard(date_str, city, program_type):
             dt = datetime.strptime(date_str, "%d.%m.%Y")
         except:
             print(f"Ошибка: Невозможно распознать дату '{date_str}'")
-            return kb.as_markup()
+            return kb.as_markup()  # Возвращаем пустую клавиатуру при ошибке
 
+    # Список часов для генерации слотов
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [22, 23]
-    night_hours_1st = [0, 1, 2, 3, 4, 5]
+    night_hours_31 = [23]  # 23:00-00:00
+    night_hours_1st = [0, 1, 2, 3, 4, 5]  # 00:00-01:00, 01:00-02:00, ..., 05:00-06:00
 
     hours_to_generate = standard_hours[:]
     if dt.date() == datetime(2025, 12, 31).date():
         hours_to_generate.extend(night_hours_31)
-    elif dt.date() == datetime(2026, 1, 1).date():
+    elif dt.date() == datetime(2026, 1, 1).date():  # 1 января
         hours_to_generate.extend(night_hours_1st)
 
     for hour in hours_to_generate:
@@ -432,7 +458,7 @@ def get_programs_keyboard():
     kb = InlineKeyboardBuilder()
     kb.button(text="Экспресс (10 мин)", callback_data="program_10")
     kb.button(text="Стандарт (30 мин)", callback_data="program_30")
-    kb.button(text="Расширенная (60 мин)", callback_data="program_60")
+    kb.button(text="Расширенный (1 час)", callback_data="program_60")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -481,204 +507,9 @@ async def start_new_order(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         "🏙️ Выберите город:", reply_markup=get_cities_keyboard()
     )
-    # Продолжаем старый FSM процесс
+    # Продолжаем новый FSM процесс
     await state.set_data({"intent": "new_order"})
     await callback.answer()
-
-
-# === ОБРАБОТЧИК КНОПКИ "ВВЕСТИ ID" ===
-@dp.callback_query(F.data == "use_id")
-async def prompt_for_order_id(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text("🔑 Пожалуйста, введите ID вашего заказа:")
-    await state.set_state(SupportForm.waiting_for_order_id)
-    await callback.answer()
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА ID ЗАКАЗА ===
-def find_order_by_id(order_id):
-    """
-    Ищет заказ по ID в temp_orders.json или orders.xlsx
-    Возвращает (data, source) или (None, None)
-    """
-    # Проверяем во временных заказах
-    if os.path.exists(TEMP_ORDERS_FILE):
-        with open(TEMP_ORDERS_FILE, "r", encoding="utf-8") as f:
-            temp_orders = json.load(f)
-        if order_id in temp_orders:
-            return temp_orders[order_id], "temp"
-
-    # Проверяем в оплаченных заказах
-    df = load_orders()
-    if not df.empty:
-        if "Order ID" in df.columns:
-            row = df[df["Order ID"] == order_id]
-            if not row.empty:
-                return row.iloc[0].to_dict(), "paid"
-    return None, None
-
-
-@dp.message(SupportForm.waiting_for_order_id)
-async def process_order_id(message: Message, state: FSMContext):
-    order_id = message.text.strip()
-    if not order_id:
-        await message.answer("❌ ID заказа не может быть пустым. Попробуйте снова.")
-        return
-
-    order_data, source = find_order_by_id(order_id)
-    if not order_data:
-        await message.answer(
-            "❌ Заказ с таким ID не найден. Проверьте ID и попробуйте снова."
-        )
-        await state.clear()
-        return
-
-    # Сохраняем связь chat_id -> order_id
-    set_user_order(message.chat.id, order_id)
-    await state.clear()  # Сбрасываем FSM
-
-    # Отправляем информацию о заказе
-    await message.answer(
-        f"✅ Вы успешно привязаны к заказу #{order_id}.\n\n"
-        f"Информация о заказе:\n"
-        f"Кого: {order_data.get('Кого пригласить', 'N/A')}\n"
-        f"Город: {order_data.get('Город', 'N/A')}\n"
-        f"Дата: {order_data.get('Дата визита', 'N/A')}\n"
-        f"Время: {order_data.get('Время визита', 'N/A')}\n"
-        f"Программа: {order_data.get('Тип программы', 'N/A')}\n"
-        f"Цена: {order_data.get('Цена', 'N/A')} ₽\n"
-        f"Адрес: {order_data.get('Адрес', 'N/A')}\n"
-        f"Детей: {order_data.get('Количество детей', 'N/A')}\n"
-        f"Имя ребёнка: {order_data.get('Имя ребёнка', 'N/A')}\n"
-        f"Телефон: {order_data.get('Телефон', 'N/A')}\n"
-        f"Пожелания: {order_data.get('Пожелания', 'N/A')}\n\n"
-        f"Теперь вы можете задавать вопросы по этому заказу, и мы постараемся вам помочь."
-    )
-
-
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ТЕКСТА (для поддержки по ID и ответов менеджера) ===
-@dp.message(F.text)
-async def handle_message(message: Message, state: FSMContext):
-    current_state = await state.get_state()
-    # Если FSM активен (например, заполняем форму), не трогаем
-    if current_state and not current_state.startswith("SupportForm"):
-        data = await state.get_data()
-        if data.get("intent") == "new_order":
-            # Это значит, что FSM для нового заказа активен
-            # Логика для OrderForm должна быть в соответствующих обработчиках
-            # Этот хендлер сработает, если сообщение не подошло под другие
-            # Для простоты, если FSM активен и intent не support, выходим
-            return
-
-    # Проверяем, является ли отправитель админом
-    if message.from_user.id == ADMIN_CHAT_ID:
-        # Проверяем, начинается ли сообщение с /add_manager
-        if message.text.startswith("/add_manager"):
-            try:
-                # /add_manager 123456789
-                parts = message.text.split()
-                if len(parts) != 2:
-                    await message.answer("❌ Используйте: /add_manager <chat_id>")
-                    return
-                new_manager_id = int(parts[1])
-                if add_manager(new_manager_id):
-                    await message.answer(
-                        f"✅ Пользователь {new_manager_id} добавлен как менеджер."
-                    )
-                else:
-                    await message.answer(
-                        f"⚠️ Пользователь {new_manager_id} уже является менеджером."
-                    )
-            except ValueError:
-                await message.answer("❌ Неверный формат chat_id. Укажите число.")
-        # Проверяем, начинается ли сообщение с /reply_to
-        elif message.text.startswith("/reply_to"):
-            # /reply_to 123456789 тут текст ответа
-            try:
-                # Разбиваем по первому пробелу после /reply_to
-                command_part, rest = message.text.split(" ", 1)
-                client_id_str, reply_text = rest.split(" ", 1)
-                client_chat_id = int(client_id_str)
-                # Отправляем ответ клиенту
-                await bot.send_message(
-                    client_chat_id, f"Ответ от поддержки:\n{reply_text}"
-                )
-                # Отправляем копию админу
-                await message.answer(
-                    f"✅ Ответ отправлен клиенту {client_chat_id} и копия сохранена."
-                )
-                await bot.send_message(
-                    ADMIN_CHAT_ID,
-                    f"Копия ответа админа клиенту {client_chat_id}:\n{reply_text}",
-                )
-            except ValueError:
-                await message.answer(
-                    "❌ Неверный формат. Используйте: /reply_to <chat_id> <текст>"
-                )
-            except Exception as e:
-                await message.answer(f"❌ Ошибка при отправке: {e}")
-        return  # Выходим, если это команда админа
-
-    # Проверяем, является ли отправитель менеджером
-    if str(message.from_user.id) in get_managers():
-        # Менеджер пишет
-        # Если сообщение содержит только числа, возможно, это chat_id клиента
-        if message.text.isdigit():
-            client_chat_id = int(message.text)
-            # Проверим, существует ли такой пользователь с привязанным заказом
-            # Это необязательно, можно просто сохранить как последнего
-            set_last_client_chat(message.from_user.id, client_chat_id)
-            await message.answer(
-                f"✅ Установлен чат с клиентом {client_chat_id} как последний для ответа."
-            )
-            return
-
-        # Иначе, это, вероятно, ответ менеджера
-        last_client_id = get_last_client_chat(message.from_user.id)
-        if last_client_id:
-            try:
-                # Отправляем ответ клиенту
-                await bot.send_message(
-                    int(last_client_id), f"Ответ от менеджера:\n{message.text}"
-                )
-                # Отправляем копию админу
-                await message.answer(
-                    f"✅ Ответ отправлен клиенту {last_client_id} и копия сохранена админу."
-                )
-                await bot.send_message(
-                    ADMIN_CHAT_ID,
-                    f"Копия ответа менеджера (ID: {message.from_user.id}) клиенту {last_client_id}:\n{message.text}",
-                )
-            except Exception as e:
-                await message.answer(f"❌ Ошибка при отправке ответа: {e}")
-        else:
-            await message.answer(
-                "❌ Неизвестно, кому отвечать. Напишите сначала ID клиента или используйте /reply_to через админа."
-            )
-        return  # Выходим, если это менеджер
-
-    # Если не админ и не менеджер, проверяем, привязан ли чат к заказу
-    user_order_id = get_user_order(message.chat.id)
-    if user_order_id:
-        # Перенаправляем сообщение админу и/или менеджерам
-        await message.answer("💬 Ваше сообщение передано в поддержку по заказу.")
-        # Отправить админу
-        await bot.send_message(
-            ADMIN_CHAT_ID,
-            f"Сообщение от клиента (chat_id: {message.chat.id}, order_id: {user_order_id}):\n{message.text}",
-        )
-        # Отправить всем менеджерам
-        managers = get_managers()
-        for manager_id in managers:
-            try:
-                await bot.send_message(
-                    int(manager_id),
-                    f"Новое сообщение от клиента (chat_id: {message.chat.id}, order_id: {user_order_id}):\n{message.text}\n\n(Для ответа напишите сначала chat_id клиента, затем сообщение)",
-                )
-            except Exception as e:
-                print(f"Ошибка отправки менеджеру {manager_id}: {e}")
-    else:
-        # Если нет связи и FSM неактивен, возможно, пользователь просто пишет
-        await message.answer("Привет! Используйте /start, чтобы начать.")
 
 
 # === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ГОРОДА ===
@@ -696,7 +527,7 @@ async def select_city(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-# === НОВЫЙ ОБРАБОТЧИК ВЫБОРА ПРОГРАММЫ ===
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВЫБОРА ПРОГРАММЫ ===
 @dp.callback_query(F.data.startswith("program_"))
 async def select_program(callback: CallbackQuery, state: FSMContext):
     """
@@ -759,6 +590,7 @@ async def select_time(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК "НЕТ МЕСТ" (теперь с программой) ===
 @dp.callback_query(F.data.startswith("unavailable_"))
 async def unavailable_time(callback: CallbackQuery, state: FSMContext):
     """
@@ -772,6 +604,7 @@ async def unavailable_time(callback: CallbackQuery, state: FSMContext):
     )
 
 
+# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА АДРЕСА ===
 @dp.message(OrderForm.address)
 async def process_address(message: Message, state: FSMContext):
     await state.update_data(address=message.text)
@@ -869,14 +702,16 @@ def save_order_to_excel(data):
         df = pd.read_excel(EXCEL_FILE)
 
     new_row = {
-        "Order ID": data.get("order_id", "N/A"),  # <-- ДОБАВЛЯЕМ Order ID
+        "Order ID": data.get("order_id", "N/A"),  # <-- ДОБАВЛЕН СТОЛБЕЦ
         "Дата и время заказа": datetime.now().strftime("%d.%m.%Y %H:%M"),
         "Кого пригласить": "Дед Мороз и Снегурочка",  # Всегда пара
         "Город": data.get("city", "Москва"),
         "Дата визита": data["date"],
         "Время визита": data["time"],
         "Тип программы": data["program_type"],
-        "Длительность": 15 if data["program_type"] == "Экспресс (15 мин)" else 30,
+        "Длительность": 10
+        if data["program_type"] == "Экспресс (10 мин)"
+        else (30 if data["program_type"] == "Стандарт (30 мин)" else 60),
         "Цена": data["price"],
         "Адрес": data["address"],
         "Количество детей": int(data["children_count"]),
@@ -925,9 +760,69 @@ async def handle_price(request):
     """
     date = request.query.get("date", "")
     time = request.query.get("time", "")
-    program_type = request.query.get("program_type", "Экспресс (15 мин)")
+    program_type = request.query.get("program_type", "Экспресс (10 мин)")  # Обновлено
     price = get_price(date, time, program_type)
     return web.json_response({"price": price})
+
+
+# --- НОВЫЙ ЭНДПОИНТ: Получить слоты времени ---
+async def handle_time_slots(request):
+    """
+    Возвращает список временных слотов с ценами и доступностью
+    """
+    date = request.query.get("date", "")
+    city = request.query.get("city", "Москва")
+    program_type = request.query.get("program_type", "Экспресс (10 мин)")  # Обновлено
+
+    if not date or not city or not program_type:
+        return web.json_response(
+            {"error": "Не хватает параметров: date, city, program_type"}, status=400
+        )
+
+    try:
+        # Проверяем формат даты
+        dt = datetime.strptime(date, "%d %B %Y")
+    except:
+        try:
+            dt = datetime.strptime(date, "%d.%m.%Y")
+        except:
+            return web.json_response({"error": "Неверный формат даты"}, status=400)
+
+    booked = get_booked_slots()
+    max_slots = CITIES.get(city, 50)
+
+    # Список часов для генерации слотов (включая ночные)
+    standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
+    night_hours_31 = [23]  # 23:00-00:00
+    night_hours_1st = [0, 1, 2, 3, 4, 5]  # 00:00-01:00, 01:00-02:00, ..., 05:00-06:00
+
+    hours_to_generate = standard_hours[:]
+    if dt.date() == datetime(2025, 12, 31).date():
+        hours_to_generate.extend(night_hours_31)
+    elif dt.date() == datetime(2026, 1, 1).date():  # 1 января
+        hours_to_generate.extend(night_hours_1st)
+
+    slots = []
+    for hour in hours_to_generate:
+        time_str = f"{hour:02d}:00"
+        slot_key = f"{date} {time_str}"
+        booked_count = booked.get(slot_key, {}).get(city, 0)
+        available_count = max_slots - booked_count
+        price = get_price(date, time_str, program_type)
+
+        slots.append(
+            {
+                "time": time_str,
+                "price": price,
+                "available": available_count > 0,
+                "available_count": available_count,
+            }
+        )
+
+    return web.json_response({"slots": slots})
+
+
+# --- КОНЕЦ НОВОГО ЭНДПОИНТА ---
 
 
 async def handle_download(request):
@@ -952,6 +847,7 @@ async def web_app():
     app.router.add_post("/api/temp_order", handle_temp_order)
     app.router.add_post("/api/confirm_order", handle_confirm_order)
     app.router.add_get("/api/price", handle_price)
+    app.router.add_get("/api/time_slots", handle_time_slots)  # <-- НОВЫЙ ЭНДПОИНТ
     app.router.add_get("/download", handle_download)
     app.router.add_get("/", handle_index)
     return app
