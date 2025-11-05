@@ -534,6 +534,21 @@ def find_order_by_id(order_id):
                 return row.iloc[0].to_dict(), "paid"
     return None, None
     # Сохраняем связь chat_id -> order_id
+
+
+@dp.message(SupportForm.waiting_for_order_id)
+async def process_order_id(message: Message, state: FSMContext):
+    order_id = message.text.strip()
+    if not order_id:
+        await message.answer("❌ ID заказа не может быть пустым. Попробуйте снова.")
+        return
+    order_data, source = find_order_by_id(order_id)
+    if not order_data:
+        await message.answer(
+            "❌ Заказ с таким ID не найден. Проверьте ID и попробуйте снова."
+        )
+        await state.clear()
+        return
     set_user_order(message.chat.id, order_id)
     await state.clear()  # Сбрасываем FSM
     # Отправляем информацию о заказе
