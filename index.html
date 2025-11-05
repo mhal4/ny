@@ -1,437 +1,626 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Заказ Деда Мороза и Снегурочки</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        /* === ГОЛУБОЙ ФОН И ЗЕЛЁНЫЕ АКЦЕНТЫ === */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-            background: linear-gradient(135deg, #87CEEB, #B0E2FF); /* LightSkyBlue → LightBlue */
-            color: #2F4F4F; /* DarkSlateGray */
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Снежинки */
-        .snowflake {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            pointer-events: none;
-            opacity: 0.8;
-            animation: fall linear infinite;
-        }
-
-        @keyframes fall {
-            to {
-                transform: translateY(100vh);
+    <head>
+        <meta charset="UTF-8" />
+        <title>Заказ Деда Мороза и Снегурочки</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            /* === ГОЛУБОЙ ФОН И ЗЕЛЁНЫЕ АКЦЕНТЫ === */
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: "Arial Rounded MT Bold", Arial, sans-serif;
+                background: linear-gradient(
+                    135deg,
+                    #87ceeb,
+                    #b0e2ff
+                ); /* LightSkyBlue → LightBlue */
+                color: #2f4f4f; /* DarkSlateGray */
+                min-height: 100vh;
+                overflow-x: hidden;
+                position: relative;
             }
-        }
-
-        /* === СУГРОБЫ ВНИЗУ === */
-        .snowdrift {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(to top, #ffffff, #f0f8ff);
-            z-index: 5;
-            border-top-left-radius: 50% 30px;
-            border-top-right-radius: 50% 30px;
-            box-shadow: 0 -5px 20px rgba(255, 255, 255, 0.5);
-        }
-
-        /* === КОНТЕЙНЕР ФОРМЫ НА СУГРОБАХ === */
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(47, 79, 79, 0.3);
-            position: relative;
-            z-index: 10;
-            margin-bottom: 100px; /* Отступ от сугробов */
-            color: #2F4F4F;
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            color: #32CD32; /* LimeGreen */
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        h2 {
-            color: #228B22; /* ForestGreen */
-            border-bottom: 2px solid #32CD32;
-            padding-bottom: 10px;
-        }
-
-        h3 {
-            color: #228B22;
-        }
-
-        .tariff-card {
-            background: rgba(240, 248, 255, 0.9); /* AliceBlue */
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 10px;
-            border-left: 4px solid #32CD32; /* LimeGreen */
-        }
-
-        .step {
-            display: none;
-        }
-
-        .step.active {
-            display: block;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #32CD32; /* LimeGreen */
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #2F4F4F;
-        }
-
-        /* Стиль для календаря */
-        input[type="date"] {
-            font-family: Arial, sans-serif; /* Более стандартный шрифт для календаря */
-        }
-
-        button {
-            background: #32CD32; /* LimeGreen */
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px 5px;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-
-        button:hover {
-            background: #228B22; /* ForestGreen */
-            transform: scale(1.05);
-        }
-
-        .price-display {
-            font-size: 1.5em;
-            color: #228B22; /* ForestGreen */
-            margin: 15px 0;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .error {
-            color: #CD5C5C; /* IndianRed */
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .suggestions {
-            background: rgba(173, 216, 230, 0.5); /* LightBlue */
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .payment-section {
-            background: rgba(240, 248, 255, 0.8); /* AliceBlue */
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: center;
-            border: 1px solid #32CD32;
-        }
-
-        /* === АДАПТИВНОСТЬ === */
-        @media (max-width: 768px) {
-            .form-container {
-                padding: 15px;
-                margin: 10px;
-                margin-bottom: 150px; /* Больше отступа на мобильных */
+            /* Снежинки */
+            .snowflake {
+                position: absolute;
+                background: white;
+                border-radius: 50%;
+                pointer-events: none;
+                opacity: 0.8;
+                animation: fall linear infinite;
             }
-
-            h1 {
-                font-size: 2em;
+            @keyframes fall {
+                to {
+                    transform: translateY(100vh);
+                }
             }
-
-            button {
-                padding: 12px 20px;
-                font-size: 16px;
+            /* === СУГРОБЫ ВНИЗУ === */
+            .snowdrift {
+                position: fixed;
+                bottom: 0;
+                left: 0;
                 width: 100%;
-                margin: 10px 0;
+                height: 200px;
+                background: linear-gradient(to top, #ffffff, #f0f8ff);
+                z-index: 5;
+                border-top-left-radius: 50% 30px;
+                border-top-right-radius: 50% 30px;
+                box-shadow: 0 -5px 20px rgba(255, 255, 255, 0.5);
             }
-
-            .tariff-card {
-                padding: 15px;
+            /* === КОНТЕЙНЕР ФОРМЫ НА СУГРОБАХ === */
+            .form-container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 30px;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 15px;
+                box-shadow: 0 0 30px rgba(47, 79, 79, 0.3);
+                position: relative;
+                z-index: 10;
+                margin-bottom: 100px; /* Отступ от сугробов */
+                color: #2f4f4f;
             }
-        }
-
-        @media (max-width: 480px) {
             h1 {
-                font-size: 1.8em;
+                font-size: 2.5em;
+                margin-bottom: 20px;
+                color: #32cd32; /* LimeGreen */
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+                text-align: center;
             }
-
+            h2 {
+                color: #228b22; /* ForestGreen */
+                border-bottom: 2px solid #32cd32;
+                padding-bottom: 10px;
+            }
+            h3 {
+                color: #228b22;
+            }
+            .tariff-card {
+                background: rgba(240, 248, 255, 0.9); /* AliceBlue */
+                padding: 20px;
+                margin: 15px 0;
+                border-radius: 10px;
+                border-left: 4px solid #32cd32; /* LimeGreen */
+            }
+            .step {
+                display: none;
+            }
+            .step.active {
+                display: block;
+            }
+            input,
+            select,
+            textarea {
+                width: 100%;
+                padding: 12px;
+                margin: 10px 0;
+                border-radius: 8px;
+                border: 1px solid #32cd32; /* LimeGreen */
+                font-size: 16px;
+                background: rgba(255, 255, 255, 0.9);
+                color: #2f4f4f;
+            }
+            button {
+                background: #32cd32; /* LimeGreen */
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                font-size: 18px;
+                border-radius: 50px;
+                cursor: pointer;
+                margin: 10px 5px;
+                transition: all 0.3s;
+                display: inline-block;
+            }
+            button:hover {
+                background: #228b22; /* ForestGreen */
+                transform: scale(1.05);
+            }
             .price-display {
-                font-size: 1.3em;
+                font-size: 1.5em;
+                color: #228b22; /* ForestGreen */
+                margin: 15px 0;
+                font-weight: bold;
+                text-align: center;
             }
-        }
-    </style>
-</head>
-<body>
-    <!-- Снежинки -->
-    <div id="snowflakes"></div>
-
-    <div class="form-container">
-        <h1>🎄 Закажи Деда Мороза и Снегурочку!</h1>
-
-        <!-- === ОПИСАНИЕ ТАРИФОВ === -->
-        <div id="tariffs">
-            <h2>Тарифы</h2>
-            <div class="tariff-card">
-                <h3>Экспресс (10 минут)</h3>
-                <p>Краткое поздравление: стихотворение, бенгальские огни, хоровод, песенка про Новый год.</p>
-                <p><strong>Идеально для небольших мероприятий</strong></p>
-            </div>
-            <div class="tariff-card">
-                <h3>Стандарт (30 минут)</h3>
-                <p>Полноценная программа: поздравление, хоровод, игры, конкурсы, загадки, песни, сказка.</p>
-                <p><strong>Классический выбор для детских праздников</strong></p>
-            </div>
-            <div class="tariff-card">
-                <h3>Расширенный (1 час)</h3>
-                <p>Максимально насыщенная программа: интерактивные игры, конкурсы, сценки, подарки, чаепитие.</p>
-                <p><strong>Для больших компаний и корпоративов</strong></p>
-            </div>
-        </div>
-
-        <!-- === РАЗДЕЛЯЮЩИЙ ОТСТУП === -->
-        <div style="height: 30px;"></div>
-
-        <!-- === ФОРМА ЗАКАЗА === -->
-        <div id="orderForm">
-            <div class="step active" id="step1">
-                <h2>В каком городе?</h2>
-                <select id="city" required>
-                    <option value="">Выберите город</option>
-                    <option value="Москва">Москва (до 50 пар)</option>
-                    <option value="СПб">Санкт-Петербург (до 27 пар)</option>
-                </select>
-                <button onclick="nextStep(2)">Далее</button>
-            </div>
-
-            <div class="step" id="step2">
-                <h2>Когда?</h2>
-                <!-- ЗАМЕНЯЕМ input type="text" НА input type="date" -->
-                <input type="date" id="date" min="2025-12-25" max="2026-01-07" required>
-                <input type="text" id="time" placeholder="Например: 14:00, 15:00, 16:00" required>
-                <div id="priceDisplay" class="price-display">Цена: —</div>
-                <div id="error" class="error"></div>
-                <div id="suggestions" class="suggestions" style="display:none;"></div>
-                <button onclick="prevStep(1)">Назад</button>
-                <button onclick="nextStep(3)">Далее</button>
-            </div>
-
-            <div class="step" id="step3">
-                <h2>Выберите программу</h2>
-                <div>
-                    <label>
-                        <input type="radio" name="program" value="Экспресс (10 мин)"> <strong>Экспресс (10 мин)</strong>
-                    </label><br>
-                    <label>
-                        <input type="radio" name="program" value="Стандарт (30 мин)"> <strong>Стандарт (30 мин)</strong>
-                    </label><br>
-                    <label>
-                        <input type="radio" name="program" value="Расширенный (1 час)"> <strong>Расширенный (1 час)</strong>
-                    </label>
+            .error {
+                color: #cd5c5c; /* IndianRed */
+                margin: 10px 0;
+                text-align: center;
+            }
+            .suggestions {
+                background: rgba(173, 216, 230, 0.5); /* LightBlue */
+                padding: 10px;
+                border-radius: 8px;
+                margin: 10px 0;
+                text-align: center;
+            }
+            .payment-section {
+                background: rgba(240, 248, 255, 0.8); /* AliceBlue */
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+                text-align: center;
+                border: 1px solid #32cd32;
+            }
+            /* === АДАПТИВНОСТЬ === */
+            @media (max-width: 768px) {
+                .form-container {
+                    padding: 15px;
+                    margin: 10px;
+                    margin-bottom: 150px; /* Больше отступа на мобильных */
+                }
+                h1 {
+                    font-size: 2em;
+                }
+                button {
+                    padding: 12px 20px;
+                    font-size: 16px;
+                    width: 100%;
+                    margin: 10px 0;
+                }
+                .tariff-card {
+                    padding: 15px;
+                }
+            }
+            @media (max-width: 480px) {
+                h1 {
+                    font-size: 1.8em;
+                }
+                .price-display {
+                    font-size: 1.3em;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Снежинки -->
+        <div id="snowflakes"></div>
+        <div class="form-container">
+            <h1>🎄 Закажи Деда Мороза и Снегурочку!</h1>
+            <!-- === ОПИСАНИЕ ТАРИФОВ === -->
+            <div id="tariffs">
+                <h2>Тарифы</h2>
+                <div class="tariff-card">
+                    <h3>Экспресс (10 минут)</h3>
+                    <p>
+                        Краткое поздравление: стихотворение, бенгальские огни,
+                        хоровод, песенка про Новый год.
+                    </p>
+                    <p><strong>Идеально для небольших мероприятий</strong></p>
                 </div>
-                <button onclick="prevStep(2)">Назад</button>
-                <button onclick="nextStep(4)">Далее</button>
-            </div>
-
-            <div class="step" id="step4">
-                <h2>Где?</h2>
-                <input type="text" id="address" placeholder="Полный адрес" required>
-                <input type="number" id="children_count" placeholder="Количество детей" min="1" required>
-                <input type="text" id="child_name" placeholder="Имя ребёнка" required>
-                <button onclick="prevStep(3)">Назад</button>
-                <button onclick="nextStep(5)">Далее</button>
-            </div>
-
-            <div class="step" id="step5">
-                <h2>Контакт и пожелания</h2>
-                <input type="text" id="phone" placeholder="Телефон (+79991234567)" required>
-                <textarea id="comments" placeholder="Пожелания (необязательно)" rows="3"></textarea>
-                <button onclick="prevStep(4)">Назад</button>
-                <button onclick="sendOrder()">Оплатить</button>
-            </div>
-
-            <div class="step" id="step6">
-                <h2>Оплата заказа</h2>
-                <div id="orderSummary"></div>
-                <div class="payment-section">
-                    <p>Для оплаты нажмите кнопку ниже:</p>
-                    <button onclick="proceedToPayment()">💳 Оплатить через ЮMoney (заглушка)</button>
-                    <p style="font-size: 0.9em; color: #2F4F4F; margin-top: 10px;">
-                        После оплаты вы будете перенаправлены на страницу подтверждения.
+                <div class="tariff-card">
+                    <h3>Стандарт (30 минут)</h3>
+                    <p>
+                        Полноценная программа: поздравление, хоровод, игры,
+                        конкурсы, загадки, песни, сказка.
+                    </p>
+                    <p>
+                        <strong
+                            >Классический выбор для детских праздников</strong
+                        >
                     </p>
                 </div>
-                <button onclick="prevStep(5)">Назад</button>
+                <div class="tariff-card">
+                    <h3>Расширенный (1 час)</h3>
+                    <p>
+                        Максимально насыщенная программа: интерактивные игры,
+                        конкурсы, сценки, подарки, чаепитие.
+                    </p>
+                    <p><strong>Для больших компаний и корпоративов</strong></p>
+                </div>
             </div>
-
-            <div class="step" id="step7">
-                <h2>Оплата прошла успешно!</h2>
-                <p>Ваш заказ принят и записан в систему.</p>
-                <button onclick="location.reload()">Сделать новый заказ</button>
+            <!-- === РАЗДЕЛЯЮЩИЙ ОТСТУП === -->
+            <div style="height: 30px"></div>
+            <!-- === ФОРМА ЗАКАЗА === -->
+            <div id="orderForm">
+                <!-- Шаг 1: Город -->
+                <div class="step active" id="step1">
+                    <h2>В каком городе?</h2>
+                    <select id="city" required>
+                        <option value="">Выберите город</option>
+                        <option value="Москва">Москва (до 50 пар)</option>
+                        <option value="СПб">Санкт-Петербург (до 27 пар)</option>
+                    </select>
+                    <button onclick="nextStep(2)">Далее</button>
+                </div>
+                <!-- Шаг 2: Программа -->
+                <div class="step" id="step2">
+                    <h2>Выберите программу</h2>
+                    <div>
+                        <label>
+                            <input
+                                type="radio"
+                                name="program"
+                                value="Экспресс (10 мин)"
+                            />
+                            <strong>Экспресс (10 мин)</strong> </label
+                        ><br />
+                        <label>
+                            <input
+                                type="radio"
+                                name="program"
+                                value="Стандарт (30 мин)"
+                            />
+                            <strong>Стандарт (30 мин)</strong> </label
+                        ><br />
+                        <label>
+                            <input
+                                type="radio"
+                                name="program"
+                                value="Расширенный (1 час)"
+                            />
+                            <strong>Расширенный (1 час)</strong>
+                        </label>
+                    </div>
+                    <button onclick="prevStep(1)">Назад</button>
+                    <button onclick="nextStep(3)">Далее</button>
+                </div>
+                <!-- Шаг 3: Дата -->
+                <div class="step" id="step3">
+                    <h2>Когда?</h2>
+                    <input
+                        type="date"
+                        id="date"
+                        min="2025-12-25"
+                        max="2026-01-07"
+                        required
+                    />
+                    <button onclick="prevStep(2)">Назад</button>
+                    <button onclick="nextStep(4)">Далее</button>
+                </div>
+                <!-- Шаг 4: Время (с ценой) -->
+                <div class="step" id="step4">
+                    <h2>Выберите время</h2>
+                    <div id="timeSlotsContainer"></div>
+                    <div id="priceDisplay" class="price-display">Цена: —</div>
+                    <div id="error" class="error"></div>
+                    <button onclick="prevStep(3)">Назад</button>
+                    <button onclick="nextStep(5)">Далее</button>
+                </div>
+                <!-- Шаг 5: Адрес и дети -->
+                <div class="step" id="step5">
+                    <h2>Где?</h2>
+                    <input
+                        type="text"
+                        id="address"
+                        placeholder="Полный адрес"
+                        required
+                    />
+                    <input
+                        type="number"
+                        id="children_count"
+                        placeholder="Количество детей"
+                        min="1"
+                        required
+                    />
+                    <input
+                        type="text"
+                        id="child_name"
+                        placeholder="Имя ребёнка"
+                        required
+                    />
+                    <button onclick="prevStep(4)">Назад</button>
+                    <button onclick="nextStep(6)">Далее</button>
+                </div>
+                <!-- Шаг 6: Контакт и пожелания -->
+                <div class="step" id="step6">
+                    <h2>Контакт и пожелания</h2>
+                    <input
+                        type="text"
+                        id="phone"
+                        placeholder="Телефон (+79991234567)"
+                        required
+                    />
+                    <textarea
+                        id="comments"
+                        placeholder="Пожелания (необязательно)"
+                        rows="3"
+                    ></textarea>
+                    <button onclick="prevStep(5)">Назад</button>
+                    <button onclick="sendOrder()">Оплатить</button>
+                </div>
+                <!-- Шаг 7: Страница оплаты -->
+                <div class="step" id="step7">
+                    <h2>Оплата заказа</h2>
+                    <div id="orderSummary"></div>
+                    <div class="payment-section">
+                        <p>Для оплаты нажмите кнопку ниже:</p>
+                        <button onclick="proceedToPayment()">
+                            💳 Оплатить через ЮMoney (заглушка)
+                        </button>
+                        <p
+                            style="
+                                font-size: 0.9em;
+                                color: #2f4f4f;
+                                margin-top: 10px;
+                            "
+                        >
+                            После оплаты вы будете перенаправлены на страницу
+                            подтверждения.
+                        </p>
+                    </div>
+                    <button onclick="prevStep(6)">Назад</button>
+                </div>
+                <!-- Шаг 8: Подтверждение оплаты -->
+                <div class="step" id="step8">
+                    <h2>Оплата прошла успешно!</h2>
+                    <p>Ваш заказ принят и записан в систему.</p>
+                    <!-- === НОВОЕ: ПОКАЗ ID ЗАКАЗА === -->
+                    <p>
+                        <strong>ID вашего заказа:</strong>
+                        <span
+                            id="orderIdDisplay"
+                            style="color: #32cd32; font-weight: bold"
+                        ></span>
+                    </p>
+                    <p>
+                        Сохраните его, чтобы в дальнейшем получить поддержку
+                        через бота.
+                    </p>
+                    <p>Для этого:</p>
+                    <ol>
+                        <li>Найдите нашего бота в Telegram.</li>
+                        <li>Нажмите /start.</li>
+                        <li>Выберите "🔑 Ввести ID заказа".</li>
+                        <li>
+                            Введите этот ID:
+                            <span
+                                id="orderIdForBot"
+                                style="color: #32cd32; font-weight: bold"
+                            ></span>
+                        </li>
+                    </ol>
+                    <button onclick="location.reload()">
+                        Сделать новый заказ
+                    </button>
+                </div>
             </div>
         </div>
-
-        <p><a href="/download" target="_blank" style="color:#228B22;">📥 Скачать список заказов</a></p>
-    </div>
-
-    <!-- === СУГРОБЫ === -->
-    <div class="snowdrift"></div>
-
-    <script>
-        // === СНЕЖИНКИ ===
-        function createSnowflakes() {
-            const container = document.getElementById('snowflakes');
-            const snowflakeCount = 50;
-
-            for (let i = 0; i < snowflakeCount; i++) {
-                const snowflake = document.createElement('div');
-                snowflake.classList.add('snowflake');
-                snowflake.style.left = Math.random() * 100 + 'vw';
-                snowflake.style.width = Math.random() * 5 + 5 + 'px';
-                snowflake.style.height = snowflake.style.width;
-                snowflake.style.animationDuration = Math.random() * 5 + 5 + 's';
-                snowflake.style.animationDelay = Math.random() * 5 + 's';
-                container.appendChild(snowflake);
-            }
-        }
-
-        // === ФУНКЦИИ НАВИГАЦИИ ===
-        function nextStep(step) {
-            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-            document.getElementById('step' + step).classList.add('active');
-        }
-
-        function prevStep(step) {
-            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-            document.getElementById('step' + step).classList.add('active');
-        }
-
-        // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ЦЕНЫ (с проверкой всех параметров) ===
-        function updatePrice() {
-            const date = document.getElementById('date').value.trim();
-            const time = document.getElementById('time').value.trim();
-            const program = document.querySelector('input[name="program"]:checked');
-            const priceDisplay = document.getElementById('priceDisplay');
-            const errorDiv = document.getElementById('error');
-
-            // Проверяем, все ли параметры выбраны
-            if (!date || !time || !program) {
-                priceDisplay.textContent = 'Цена: —';
-                // errorDiv.textContent = ''; // Не показываем ошибку, просто ждём
-                return;
+        <!-- === СУГРОБЫ === -->
+        <div class="snowdrift"></div>
+        <script>
+            // === СНЕЖИНКИ ===
+            function createSnowflakes() {
+                const container = document.getElementById("snowflakes");
+                const snowflakeCount = 50;
+                for (let i = 0; i < snowflakeCount; i++) {
+                    const snowflake = document.createElement("div");
+                    snowflake.classList.add("snowflake");
+                    snowflake.style.left = Math.random() * 100 + "vw";
+                    snowflake.style.width = Math.random() * 5 + 5 + "px";
+                    snowflake.style.height = snowflake.style.width;
+                    snowflake.style.animationDuration =
+                        Math.random() * 5 + 5 + "s";
+                    snowflake.style.animationDelay = Math.random() * 5 + "s";
+                    container.appendChild(snowflake);
+                }
             }
 
-            // Если все параметры выбраны, делаем запрос
-            fetch(`/api/price?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&program_type=${encodeURIComponent(program.value)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.price !== undefined) {
-                        priceDisplay.textContent = `Цена: ${data.price} ₽`;
-                        errorDiv.textContent = ''; // Очищаем ошибки, если цена получена
-                    } else {
-                        priceDisplay.textContent = 'Цена: —';
-                        errorDiv.textContent = '❌ Ошибка получения цены.';
-                        console.error('API вернул некорректные данные:', data);
+            // === ФУНКЦИИ НАВИГАЦИИ ===
+            function nextStep(step) {
+                document
+                    .querySelectorAll(".step")
+                    .forEach((el) => el.classList.remove("active"));
+                document.getElementById("step" + step).classList.add("active");
+            }
+            function prevStep(step) {
+                document
+                    .querySelectorAll(".step")
+                    .forEach((el) => el.classList.remove("active"));
+                document.getElementById("step" + step).classList.add("active");
+            }
+
+            // === ФУНКЦИЯ ФОРМАТИРОВАНИЯ ДАТЫ (для отправки API) ===
+            function formatDateToDisplay(dateStr) {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) {
+                    return "";
+                }
+                const day = date.getDate();
+                const monthNames = [
+                    "января",
+                    "февраля",
+                    "марта",
+                    "апреля",
+                    "мая",
+                    "июня",
+                    "июля",
+                    "августа",
+                    "сентября",
+                    "октября",
+                    "ноября",
+                    "декабря",
+                ];
+                const month = monthNames[date.getMonth()];
+                const year = date.getFullYear();
+                return `${day} ${month} ${year}`;
+            }
+
+            // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой) ===
+            async function updateTimeSlots() {
+                const dateInput = document.getElementById("date");
+                const dateValue = dateInput.value; // Это будет в формате YYYY-MM-DD
+                const program = document.querySelector(
+                    'input[name="program"]:checked',
+                );
+                const timeSlotsContainer =
+                    document.getElementById("timeSlotsContainer");
+                const priceDisplay = document.getElementById("priceDisplay");
+                const errorDiv = document.getElementById("error");
+
+                if (!dateValue || !program) {
+                    timeSlotsContainer.innerHTML = "";
+                    priceDisplay.textContent = "Цена: —";
+                    errorDiv.textContent = "";
+                    return;
+                }
+
+                // Проверяем, входит ли дата в допустимый диапазон
+                const selectedDate = new Date(dateValue);
+                const minDate = new Date("2025-12-25");
+                const maxDate = new Date("2026-01-07");
+
+                if (selectedDate < minDate || selectedDate > maxDate) {
+                    timeSlotsContainer.innerHTML = "";
+                    priceDisplay.textContent = "Цена: —";
+                    errorDiv.textContent =
+                        "❌ Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.";
+                    return; // Не продолжаем, если дата вне диапазона
+                } else {
+                    errorDiv.textContent = ""; // Очищаем ошибку, если дата правильная
+                }
+
+                const displayDate = formatDateToDisplay(dateValue);
+
+                try {
+                    // Запрашиваем все временные слоты с ценами с сервера
+                    // Это эмулирует get_time_slots_keyboard
+                    // Сервер должен вернуть список объектов {time: "HH:MM", price: X, available: true/false}
+                    // Пока используем фиксированные часы, как в боте
+                    const hours = [14, 15, 16, 17, 18, 19, 20, 21];
+                    if (dateValue === "2026-01-01") {
+                        hours.push(00, 01, 02, 03, 04, 05);
                     }
-                })
-                .catch(error => {
-                    console.error('Ошибка при получении цены:', error);
-                    priceDisplay.textContent = 'Цена: —';
-                    errorDiv.textContent = '❌ Ошибка соединения при получении цены.';
+                    if (dateValue === "2025-12-31") {
+                        hours.push(22, 23);
+                    }
+                    let html =
+                        '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+                    for (const hour of hours) {
+                        const time_str = `${hour.toString().padStart(2, "0")}:00`;
+                        // Запрашиваем цену для каждого слота
+                        const res = await fetch(
+                            `/api/price?date=${encodeURIComponent(displayDate)}&time=${encodeURIComponent(time_str)}&program_type=${encodeURIComponent(program.value)}`,
+                        );
+                        if (!res.ok) {
+                            console.error(
+                                `Ошибка получения цены для ${time_str}:`,
+                                res.statusText,
+                            );
+                            continue;
+                        }
+                        const data = await res.json();
+                        const price = data.price || 0;
+                        // Здесь можно добавить проверку доступности, если API её предоставляет
+                        // Пока считаем, что если цена получена, слот доступен
+                        html += `<button class="time-slot-btn" data-time="${time_str}" data-price="${price}">${time_str} — ${price} ₽</button>`;
+                    }
+                    html += "</div>";
+                    timeSlotsContainer.innerHTML = html;
+
+                    // Добавляем обработчики для кнопок времени
+                    document
+                        .querySelectorAll(".time-slot-btn")
+                        .forEach((btn) => {
+                            btn.addEventListener("click", function () {
+                                // Убираем активный класс у всех
+                                document
+                                    .querySelectorAll(".time-slot-btn")
+                                    .forEach((b) =>
+                                        b.classList.remove("selected"),
+                                    );
+                                // Добавляем активный класс к нажатой
+                                this.classList.add("selected");
+                                // Показываем цену
+                                const price = this.getAttribute("data-price");
+                                priceDisplay.textContent = `Цена: ${price} ₽`;
+                                // Сохраняем выбранное время
+                                currentOrder.selectedTime =
+                                    this.getAttribute("data-time");
+                            });
+                        });
+                } catch (e) {
+                    console.error("Ошибка при обновлении слотов времени:", e);
+                    timeSlotsContainer.innerHTML =
+                        '<p style="color: red;">Ошибка загрузки временных слотов.</p>';
+                    priceDisplay.textContent = "Цена: —";
+                }
+            }
+
+            // Привязываем обновление слотов к изменению даты и программы
+            document
+                .getElementById("date")
+                .addEventListener("change", updateTimeSlots);
+            // Нужно отслеживать изменение выбора программы
+            const programInputs = document.querySelectorAll(
+                'input[name="program"]',
+            );
+            programInputs.forEach((input) =>
+                input.addEventListener("change", updateTimeSlots),
+            );
+
+            // === ОТПРАВКА ЗАКАЗА ===
+            async function sendOrder() {
+                const city = document.getElementById("city").value;
+                const date = document.getElementById("date").value;
+                const time = currentOrder.selectedTime; // Берём из выбранной кнопки
+                const program = document.querySelector(
+                    'input[name="program"]:checked',
+                );
+                const address = document.getElementById("address").value;
+                const children_count =
+                    document.getElementById("children_count").value;
+                const child_name = document.getElementById("child_name").value;
+                const phone = document.getElementById("phone").value;
+                const comments = document.getElementById("comments").value;
+
+                const errorDiv = document.getElementById("error");
+
+                // Проверяем, все ли обязательные поля заполнены
+                if (
+                    !city ||
+                    !date ||
+                    !time ||
+                    !program ||
+                    !address ||
+                    !children_count ||
+                    !child_name ||
+                    !phone
+                ) {
+                    errorDiv.textContent =
+                        "❌ Пожалуйста, заполните все обязательные поля.";
+                    return;
+                }
+
+                // Проверяем формат телефона
+                if (!phone.startsWith("+7") || phone.length !== 12) {
+                    errorDiv.textContent =
+                        "❌ Неверный формат телефона. Используйте формат +7XXXXXXXXXX.";
+                    return;
+                }
+
+                // Если все проверки пройдены, отправляем заказ
+                const data = {
+                    city: city,
+                    date: formatDateToDisplay(date), // Преобразуем дату
+                    time: time, // Используем выбранное время
+                    program_type: program.value, // Используем значение из радио-кнопки
+                    address: address,
+                    children_count: children_count,
+                    child_name: child_name,
+                    phone: phone,
+                    comments: comments,
+                    price:
+                        parseFloat(
+                            document
+                                .getElementById("priceDisplay")
+                                .textContent.replace("Цена: ", "")
+                                .replace(" ₽", ""),
+                        ) || 0,
+                };
+
+                const res = await fetch("/api/temp_order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
                 });
-        }
 
-        // Привязываем обработчики событий
-        document.getElementById('date').addEventListener('change', updatePrice); // Изменено на 'change'
-        document.getElementById('time').addEventListener('input', updatePrice);
-        // Нужно отслеживать изменение выбора программы
-        const programInputs = document.querySelectorAll('input[name="program"]');
-        programInputs.forEach(input => input.addEventListener('change', updatePrice)); // Добавляем обработчик на 'change' для радио-кнопок
+                if (res.ok) {
+                    const result = await res.json();
+                    currentOrder.order_id = result.order_id;
 
-
-        // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОТПРАВКИ ЗАКАЗА (с проверкой заполнения) ===
-        async function sendOrder() {
-            const city = document.getElementById('city').value;
-            const date = document.getElementById('date').value;
-            const time = document.getElementById('time').value;
-            const program = document.querySelector('input[name="program"]:checked');
-            const address = document.getElementById('address').value;
-            const children_count = document.getElementById('children_count').value;
-            const child_name = document.getElementById('child_name').value;
-            const phone = document.getElementById('phone').value;
-            const comments = document.getElementById('comments').value;
-
-            const errorDiv = document.getElementById('error');
-
-            // Проверяем, все ли обязательные поля заполнены
-            if (!city || !date || !time || !program || !address || !children_count || !child_name || !phone) {
-                errorDiv.textContent = '❌ Пожалуйста, заполните все обязательные поля.';
-                return; // Не отправляем, если есть пустые обязательные поля
-            }
-
-            // Проверяем формат телефона
-            if (!phone.startsWith('+7') || phone.length !== 12) {
-                 errorDiv.textContent = '❌ Неверный формат телефона. Используйте формат +7XXXXXXXXXX.';
-                 return;
-            }
-
-            // Если все проверки пройдены, отправляем заказ
-            const data = {
-                city: city,
-                date: formatDateToDisplay(date), // Преобразуем дату
-                time: time,
-                program_type: program.value, // Используем значение из радио-кнопки
-                address: address,
-                children_count: children_count,
-                child_name: child_name,
-                phone: phone,
-                comments: comments,
-                price: parseFloat(document.getElementById('priceDisplay').textContent.replace('Цена: ', '').replace(' ₽', '')) || 0
-            };
-
-            const res = await fetch('/api/temp_order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                const result = await res.json();
-                currentOrder.order_id = result.order_id;
-
-                document.getElementById('orderSummary').innerHTML = `
+                    document.getElementById("orderSummary").innerHTML = `
                     <p><strong>Кого:</strong> Дед Мороз и Снегурочка</p>
                     <p><strong>Город:</strong> ${data.city}</p>
                     <p><strong>Дата:</strong> ${data.date} в ${data.time}</p>
@@ -442,64 +631,55 @@
                     <p><strong>Имя ребёнка:</strong> ${data.child_name}</p>
                 `;
 
-                nextStep(6);
-                errorDiv.textContent = ''; // Очищаем ошибки после успешной отправки
-            } else {
-                const result = await res.json();
-                errorDiv.textContent = '❌ Ошибка: ' + result.error;
+                    nextStep(7);
+                    errorDiv.textContent = ""; // Очищаем ошибки после успешной отправки
+                } else {
+                    const result = await res.json();
+                    errorDiv.textContent = "❌ Ошибка: " + result.error;
+                }
             }
-        }
 
-        // === ФУНКЦИЯ ФОРМАТИРОВАНИЯ ДАТЫ (для отправки API) ===
-        // Эта функция уже была, но убедимся, что она правильно работает
-        function formatDateToDisplay(dateStr) {
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) {
-                return '';
+            // === ОПЛАТА ===
+            let currentOrder = {};
+
+            function proceedToPayment() {
+                alert(
+                    "Переход на страницу оплаты (заглушка). В реальности откроется ЮMoney.",
+                );
+                setTimeout(() => {
+                    confirmOrderFromTemp(currentOrder.order_id);
+                }, 1000);
             }
-            const day = date.getDate();
-            const monthNames = [
-                "января", "февраля", "марта", "апреля", "мая", "июня",
-                "июля", "августа", "сентября", "октября", "ноября", "декабря"
-            ];
-            const month = monthNames[date.getMonth()];
-            const year = date.getFullYear();
-            return `${day} ${month} ${year}`;
-        }
 
-        // === ОПЛАТА ===
-        let currentOrder = {};
+            async function confirmOrderFromTemp(order_id) {
+                const res = await fetch("/api/confirm_order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ order_id: order_id }),
+                });
 
-        function proceedToPayment() {
-            alert("Переход на страницу оплаты (заглушка). В реальности откроется ЮMoney.");
-            setTimeout(() => {
-                confirmOrderFromTemp(currentOrder.order_id);
-            }, 1000);
-        }
-
-        async function confirmOrderFromTemp(order_id) {
-            const res = await fetch('/api/confirm_order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: order_id })
-            });
-
-            if (res.ok) {
-                nextStep(7);
-            } else {
-                const result = await res.json();
-                alert('❌ Ошибка подтверждения: ' + result.error);
+                if (res.ok) {
+                    // --- ОБНОВЛЕНО: ПОКАЗ ID ЗАКАЗА ---
+                    document.getElementById("orderIdDisplay").textContent =
+                        order_id;
+                    document.getElementById("orderIdForBot").textContent =
+                        order_id;
+                    // ---
+                    nextStep(8);
+                } else {
+                    const result = await res.json();
+                    alert("❌ Ошибка подтверждения: " + result.error);
+                }
             }
-        }
 
-        // === ИНИЦИАЛИЗАЦИЯ ===
-        window.onload = function() {
-            createSnowflakes();
-            // Устанавливаем минимальную и максимальную дату для виджета
-            const dateInput = document.getElementById('date');
-            dateInput.min = '2025-12-25';
-            dateInput.max = '2026-01-07';
-        };
-    </script>
-</body>
+            // === ИНИЦИАЛИЗАЦИЯ ===
+            window.onload = function () {
+                createSnowflakes();
+                // Устанавливаем минимальную и максимальную дату для виджета
+                const dateInput = document.getElementById("date");
+                dateInput.min = "2025-12-25";
+                dateInput.max = "2026-01-07";
+            };
+        </script>
+    </body>
 </html>
