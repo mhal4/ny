@@ -142,7 +142,7 @@ def find_next_available_slots(start_date_str, city):
     Находит ближайшие доступные даты/время
     """
     try:
-        today = datetime.strptime(start_date_str, "%d %B %Y")
+        today = datetime.strptime(start_date_str, "%d %m %Y")
     except:
         try:
             today = datetime.strptime(start_date_str, "%d.%m.%Y")
@@ -150,7 +150,9 @@ def find_next_available_slots(start_date_str, city):
             today = datetime.strptime(start_date_str, "%Y-%m-%d")
 
     available = []
-    for i in range(1, 8):
+    for i in range(-2, 2, 1):
+        if i == 0:
+            continue
         next_day = today + timedelta(days=i)
         date_str = next_day.strftime("%d %B %Y")
         for hour in [14, 15, 16, 17, 18, 19, 20, 21]:
@@ -980,7 +982,7 @@ async def handle_time_slots(request):
     dt = None
     try:
         # Попробуем формат DD Month YYYY
-        dt = datetime.strptime(date, "%d %B %Y")
+        dt = datetime.strptime(date, "%d %m %Y")
     except ValueError:
         try:
             # Попробуем формат YYYY-MM-DD
