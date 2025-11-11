@@ -332,6 +332,7 @@
         }
 
                 // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой, через новый API) ===
+                // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой, через новый API) ===
         async function updateTimeSlots() {
             const dateInput = document.getElementById('date');
             const dateValue = dateInput.value; // Это будет в формате YYYY-MM-DD
@@ -345,9 +346,11 @@
             priceDisplay.textContent = 'Цена: —';
             errorDiv.textContent = '';
 
+            // --- НОВОЕ: Проверяем, все ли параметры выбраны ---
             if (!dateValue || !program) {
-                // Не грузим слоты, если не все параметры выбраны
-                return;
+                // Не грузим слоты, если не все основные параметры выбраны
+                console.log("updateTimeSlots: Не все параметры выбраны (date или program).");
+                return; // Просто выходим, не отправляем запрос
             }
 
             // Проверяем, входит ли дата в допустимый диапазон
@@ -359,6 +362,7 @@
                 errorDiv.textContent = '❌ Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
                 return; // Не продолжаем, если дата вне диапазона
             }
+
             const displayDate = formatDateToDisplay(dateValue);
 
             // --- НОВОЕ: Проверяем, что displayDate не пустая строка ---
@@ -381,11 +385,22 @@
 
             try {
                 // Запрашиваем все временные слоты с ценами и доступностью с сервера
-                // --- ИСПРАВЛЕНО: Используем displayDate ---
                 const res = await fetch(`/api/time_slots?date=${encodeURIComponent(displayDate)}&city=${encodeURIComponent(city)}&program_type=${encodeURIComponent(program.value)}`);
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 if (!res.ok) {
-                    throw new Error(`Ошибка API: ${res.status}`);
+                    // --- ИСПРАВЛЕНО: Более точное сообщение об ошибке ---
+                    let errorMessage = `Ошибка API: ${res.status}`;
+                    try {
+                        // Пробуем получить тело ошибки от сервера
+                        const errorData = await res.json();
+                        if (errorData.error) {
+                            errorMessage += ` - ${errorData.error}`;
+                        }
+                    } catch (e) {
+                        // Если не удалось распарсить JSON ошибки, оставляем статус
+                        console.error("Не удалось распарсить тело ошибки от сервера:", e);
+                    }
+                    throw new Error(errorMessage);
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 }
                 const data = await res.json();
 
