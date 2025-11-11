@@ -29,7 +29,7 @@ MANAGERS_FILE = "managers.json"  # Список chat_id менеджеров
 LAST_CLIENT_CHAT_FILE = "last_client_chat.json"  # Хранит последний chat_id клиента, которому писал менеджер (для /reply)
 
 # === МАКСИМАЛЬНОЕ КОЛ-ВО ПАР ПО ГОРОДАМ ===
-CITIES = {"Москва": 50, "СПб": 27}
+CITIES = {"Москва": 50, "СПб": 1}
 sale = 0.7 if datetime.now() < datetime(2025, 12, 1) else 1
 
 # === ИНИЦИАЛИЗАЦИЯ ===
