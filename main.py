@@ -182,8 +182,10 @@ def get_price(date_str, time_str, program_type):
             dt = datetime.strptime(date_str, "%Y-%m-%d")
         elif "/" in date_str:
             dt = datetime.strptime(date_str, "%d/%m/%Y")
-        else:
+        elif " " in date_str:
             dt = datetime.strptime(date_str, "%d %B %Y")
+        else:
+            dt = datetime.strptime(date_str, "%m/%d/%Y")
 
         # Извлекаем час из time_str
         time_parts = time_str.split(":")
