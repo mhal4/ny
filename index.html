@@ -322,11 +322,7 @@
                 return '';
             }
             const day = date.getDate();
-            const monthNames = [
-                "января", "февраля", "марта", "апреля", "мая", "июня",
-                "июля", "августа", "сентября", "октября", "ноября", "декабря"
-            ];
-            const month = monthNames[date.getMonth()];
+            const month = date.getMonth();
             const year = date.getFullYear();
             return `${day} ${month} ${year}`;
         }
