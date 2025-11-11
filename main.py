@@ -1028,7 +1028,7 @@ async def handle_time_slots(request):
             try:
                 # Попробуем формат DD.MM.YYYY
                 dt = datetime.strptime(date, "%d.%m.%Y")
-            except ValueError
+            except ValueError:
                 try:
                     # Попробуем формат MM/DD/YYYY
                     dt = datetime.strptime(date, "%m/%d/%Y")
