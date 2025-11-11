@@ -359,6 +359,25 @@
                 errorDiv.textContent = '❌ Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
                 return; // Не продолжаем, если дата вне диапазона
             }
+            const displayDate = formatDateToDisplay(dateValue);
+
+            // --- НОВОЕ: Проверяем, что displayDate не пустая строка ---
+            if (!displayDate) {
+                 console.log("updateTimeSlots: displayDate пустая строка. Неверный формат dateValue?");
+                 errorDiv.textContent = '❌ Ошибка формата даты.';
+                 return;
+            }
+            // --- КОНЕЦ НОВОГО ---
+
+            const city = document.getElementById('city').value;
+
+            // --- НОВОЕ: Проверяем, что city выбран ---
+            if (!city) {
+                 console.log("updateTimeSlots: Город не выбран.");
+                 errorDiv.textContent = '❌ Пожалуйста, выберите город.';
+                 return;
+            }
+            // --- КОНЕЦ НОВОГО ---
 
             // --- ИСПРАВЛЕНО: Отправляем дату в нужном формате ---
             const displayDate = formatDateToDisplay(dateValue);

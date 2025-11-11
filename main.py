@@ -1015,28 +1015,23 @@ async def handle_time_slots(request):
             {"error": "Не хватает параметров: date, city, program_type"}, status=400
         )
 
+    # --- НОВОЕ: Попробуем распарсить оба формата даты ---
+    dt = None
     try:
-        # Проверяем формат даты
+        # Попробуем формат DD Month YYYY
         dt = datetime.strptime(date, "%d %B %Y")
-    except:
+    except ValueError:
         try:
-            dt = datetime.strptime(date, "%d.%m.%Y")
-        except:
-            return web.json_response({"error": "Неверный формат даты"}, status=400)
-
-        # --- НОВОЕ: Попробуем распарсить оба формата даты ---
-        dt = None
-        try:
-            # Попробуем формат DD Month YYYY
-            dt = datetime.strptime(date, "%d %B %Y")
+            # Попробуем формат YYYY-MM-DD
+            dt = datetime.strptime(date, "%Y-%m-%d")
         except ValueError:
             try:
-                # Попробуем формат YYYY-MM-DD
-                dt = datetime.strptime(date, "%Y-%m-%d")
-            except ValueError:
+                # Попробуем формат DD.MM.YYYY
+                dt = datetime.strptime(date, "%d.%m.%Y")
+            except ValueError
                 try:
-                    # Попробуем формат DD.MM.YYYY
-                    dt = datetime.strptime(date, "%d.%m.%Y")
+                    # Попробуем формат MM/DD/YYYY
+                    dt = datetime.strptime(date, "%m/%d/%Y")
                 except ValueError:
                     return web.json_response(
                         {
