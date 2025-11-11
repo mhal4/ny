@@ -393,7 +393,7 @@
                         // Пробуем получить тело ошибки от сервера
                         const errorData = await res.json();
                         if (errorData.error) {
-                            errorMessage += ` - ${errorData.error}`;
+                            errorMessage += ` - ${errorData.error} + ${displayDate}`;
                         }
                     } catch (e) {
                         // Если не удалось распарсить JSON ошибки, оставляем статус
