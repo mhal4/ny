@@ -181,7 +181,7 @@ def get_price(date_str, time_str, program_type):
         elif "-" in date_str:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
         elif "/" in date_str:
-            dt = datetime.strptime(date_str, "%m/%d/%Y")
+            dt = datetime.strptime(date_str, "%d/%m/%Y")
         else:
             dt = datetime.strptime(date_str, "%d %B %Y")
 
@@ -194,48 +194,7 @@ def get_price(date_str, time_str, program_type):
 
         # Цены для Экспресса (10 мин) — условно из фото
         if program_type == "Экспресс (10 мин)":
-            if dt < datetime(2025, 12, 25):
-                return round(5600 * sale)
-            elif dt <= datetime(2025, 12, 27):
-                return round(6400 * sale)
-            elif dt == datetime(2025, 12, 28):
-                return round(7000 * sale)
-            elif dt == datetime(2025, 12, 29):
-                return round(5475 * sale)
-            elif dt == datetime(2025, 12, 30):
-                return round(5175 * sale)
-            elif dt == datetime(2025, 12, 31):
-                if 9 <= hour < 14:
-                    return round(7700 * sale)
-                elif 14 <= hour < 16:
-                    return round(8150 * sale)
-                elif 16 <= hour < 19:
-                    return round(11975 * sale)
-                elif 19 <= hour < 21:
-                    return round(13800 * sale)
-                elif 21 <= hour < 23:
-                    return round(14925 * sale)  # Исправлено: 13900 -> 14925 для 21-23
-                elif 23 <= hour:  # 23:00-00:00 31 декабря
-                    return round(25200 * sale)
-            elif dt.month == 1 and dt.day == 1:  # 1 января
-                if 0 <= hour < 3:  # 00:00-02:59
-                    return round(
-                        25200 * sale
-                    )  # Используем высокую цену как для 31 декабря ночью
-                elif 3 <= hour < 6:  # 03:00-05:59
-                    return round(15000 * sale)  # Исправлено: 9000 -> 15000
-                elif dt.day in [1, 2]:  # 06:00 и далее 1 и 2 января
-                    return round(7000 * sale)
-                elif 3 <= dt.day <= 7:
-                    return round(5600 * sale)
-                else:
-                    return round(5000 * sale)
-            elif dt.month == 1 and dt.day in [2]:
-                return round(7000 * sale)
-            elif dt.month == 1 and 3 <= dt.day <= 7:
-                return round(5600 * sale)
-            else:
-                return round(5000 * sale)
+            return round(5000 * sale)
 
         # Цены для Стандарта (30 мин) — как "классика" из текста
         elif program_type == "Стандарт (30 мин)":
@@ -420,7 +379,7 @@ def get_time_slots_keyboard(date_str, city, program_type):
 
     # Список часов для генерации слотов
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [23]  # 23:00-00:00
+    night_hours_31 = [22, 23]  # 23:00-00:00
     night_hours_1st = [0, 1, 2, 3, 4, 5]  # 00:00-01:00, 01:00-02:00, ..., 05:00-06:00
 
     hours_to_generate = standard_hours[:]
@@ -1030,8 +989,8 @@ async def handle_time_slots(request):
                 dt = datetime.strptime(date, "%d.%m.%Y")
             except ValueError:
                 try:
-                    # Попробуем формат MM/DD/YYYY
-                    dt = datetime.strptime(date, "%m/%d/%Y")
+                    # Попробуем формат DD/MM/YYYY
+                    dt = datetime.strptime(date, "%d/%m/%Y")
                 except ValueError:
                     return web.json_response(
                         {
