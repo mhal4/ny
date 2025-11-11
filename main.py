@@ -154,7 +154,7 @@ def find_next_available_slots(start_date_str, city):
         if i == 0:
             continue
         next_day = today + timedelta(days=i)
-        date_str = next_day.strftime("%d %B %Y")
+        date_str = next_day.strftime("%d.%m.%Y")
         for hour in [14, 15, 16, 17, 18, 19, 20, 21]:
             time_str = f"{hour:02d}:00"
             if is_slot_available(date_str, time_str, city):
@@ -185,7 +185,7 @@ def get_price(date_str, time_str, program_type):
         elif "/" in date_str:
             dt = datetime.strptime(date_str, "%d/%m/%Y")
         elif " " in date_str:
-            dt = datetime.strptime(date_str, "%d %B %Y")
+            dt = datetime.strptime(date_str, "%d %m %Y")
         else:
             dt = datetime.strptime(date_str, "%m/%d/%Y")
 
@@ -356,7 +356,7 @@ def get_dates_keyboard():
     end_date = datetime(2026, 1, 7)
     current = start_date
     while current <= end_date:
-        day = current.strftime("%d %B %Y")
+        day = current.strftime("%d.%m.%Y")
         kb.button(text=day, callback_data=f"date_{day}")
         current += timedelta(days=1)
     kb.adjust(2)
@@ -373,7 +373,7 @@ def get_time_slots_keyboard(date_str, city, program_type):
     max_slots = CITIES.get(city, 50)
 
     try:
-        dt = datetime.strptime(date_str, "%d %B %Y")
+        dt = datetime.strptime(date_str, "%d %m %Y")
     except:
         try:
             dt = datetime.strptime(date_str, "%d.%m.%Y")
