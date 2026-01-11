@@ -5,18 +5,16 @@
     <title>Заказ Деда Мороза и Снегурочки</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* === ГОЛУБОЙ ФОН И ЗЕЛЁНЫЕ АКЦЕНТЫ === */
         body {
             margin: 0;
             padding: 0;
             font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-            background: linear-gradient(135deg, #87CEEB, #B0E2FF); /* LightSkyBlue → LightBlue */
-            color: #2F4F4F; /* DarkSlateGray */
+            background: linear-gradient(135deg, #87CEEB, #B0E2FF); 
+            color: #2F4F4F; 
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
         }
-        /* Снежинки */
         .snowflake {
             position: absolute;
             background: white;
@@ -30,7 +28,6 @@
                 transform: translateY(100vh);
             }
         }
-        /* === СУГРОБЫ ВНИЗУ === */
         .snowdrift {
             position: fixed;
             bottom: 0;
@@ -43,7 +40,6 @@
             border-top-right-radius: 50% 30px;
             box-shadow: 0 -5px 20px rgba(255, 255, 255, 0.5);
         }
-        /* === КОНТЕЙНЕР ФОРМЫ НА СУГРОБАХ === */
         .form-container {
             max-width: 800px;
             margin: 0 auto;
@@ -53,18 +49,18 @@
             box-shadow: 0 0 30px rgba(47, 79, 79, 0.3);
             position: relative;
             z-index: 10;
-            margin-bottom: 100px; /* Отступ от сугробов */
+            margin-bottom: 100px; 
             color: #2F4F4F;
         }
         h1 {
             font-size: 2.5em;
             margin-bottom: 20px;
-            color: #32CD32; /* LimeGreen */
+            color: #32CD32; 
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
         h2 {
-            color: #228B22; /* ForestGreen */
+            color: #228B22; 
             border-bottom: 2px solid #32CD32;
             padding-bottom: 10px;
         }
@@ -72,11 +68,11 @@
             color: #228B22;
         }
         .tariff-card {
-            background: rgba(240, 248, 255, 0.9); /* AliceBlue */
+            background: rgba(240, 248, 255, 0.9);
             padding: 20px;
             margin: 15px 0;
             border-radius: 10px;
-            border-left: 4px solid #32CD32; /* LimeGreen */
+            border-left: 4px solid #32CD32; 
         }
         .step {
             display: none;
@@ -89,13 +85,13 @@
             padding: 12px;
             margin: 10px 0;
             border-radius: 8px;
-            border: 1px solid #32CD32; /* LimeGreen */
+            border: 1px solid #32CD32; 
             font-size: 16px;
             background: rgba(255, 255, 255, 0.9);
             color: #2F4F4F;
         }
         button {
-            background: #32CD32; /* LimeGreen */
+            background: #32CD32; 
             color: white;
             border: none;
             padding: 15px 30px;
@@ -107,30 +103,30 @@
             display: inline-block;
         }
         button:hover {
-            background: #228B22; /* ForestGreen */
+            background: #228B22; 
             transform: scale(1.05);
         }
         .price-display {
             font-size: 1.5em;
-            color: #228B22; /* ForestGreen */
+            color: #228B22; 
             margin: 15px 0;
             font-weight: bold;
             text-align: center;
         }
         .error {
-            color: #CD5C5C; /* IndianRed */
+            color: #CD5C5C; 
             margin: 10px 0;
             text-align: center;
         }
         .suggestions {
-            background: rgba(173, 216, 230, 0.5); /* LightBlue */
+            background: rgba(173, 216, 230, 0.5); 
             padding: 10px;
             border-radius: 8px;
             margin: 10px 0;
             text-align: center;
         }
         .payment-section {
-            background: rgba(240, 248, 255, 0.8); /* AliceBlue */
+            background: rgba(240, 248, 255, 0.8); 
             padding: 20px;
             border-radius: 10px;
             margin: 20px 0;
@@ -142,7 +138,7 @@
             .form-container {
                 padding: 15px;
                 margin: 10px;
-                margin-bottom: 150px; /* Больше отступа на мобильных */
+                margin-bottom: 150px; 
             }
             h1 {
                 font-size: 2em;
@@ -168,11 +164,9 @@
     </style>
 </head>
 <body>
-    <!-- Снежинки -->
     <div id="snowflakes"></div>
     <div class="form-container">
         <h1>🎄 Закажи Деда Мороза и Снегурочку!</h1>
-        <!-- === ОПИСАНИЕ ТАРИФОВ === -->
         <div id="tariffs">
             <h2>Тарифы</h2>
             <div class="tariff-card">
@@ -191,9 +185,7 @@
                 <p><strong>Для больших компаний и корпоративов</strong></p>
             </div>
         </div>
-        <!-- === РАЗДЕЛЯЮЩИЙ ОТСТУП === -->
         <div style="height: 30px;"></div>
-        <!-- === ФОРМА ЗАКАЗА === -->
         <div id="orderForm">
             <!-- Шаг 1: Город -->
             <div class="step active" id="step1">
@@ -272,7 +264,6 @@
             <div class="step" id="step8">
                 <h2>Оплата прошла успешно!</h2>
                 <p>Ваш заказ принят и записан в систему.</p>
-                <!-- === НОВОЕ: ПОКАЗ ID ЗАКАЗА === -->
                 <p><strong>ID вашего заказа:</strong> <span id="orderIdDisplay" style="color: #32CD32; font-weight: bold;"></span></p>
                 <p>Сохраните его, чтобы в дальнейшем получить поддержку через бота.</p>
                 <p>Для этого:</p>
@@ -326,8 +317,6 @@
             const year = date.getFullYear();
             return `${day} ${month} ${year}`;
         }
-
-                // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой, через новый API) ===
                 // === ОБНОВЛЁННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ВРЕМЕННЫХ СЛОТОВ (с ценой, через новый API) ===
         async function updateTimeSlots() {
             const dateInput = document.getElementById('date');
@@ -342,7 +331,7 @@
             priceDisplay.textContent = 'Цена: —';
             errorDiv.textContent = '';
 
-            // --- НОВОЕ: Проверяем, все ли параметры выбраны ---
+            // --- Проверяем, все ли параметры выбраны ---
             if (!dateValue || !program) {
                 // Не грузим слоты, если не все основные параметры выбраны
                 console.log("updateTimeSlots: Не все параметры выбраны (date или program).");
@@ -356,7 +345,7 @@
 
             if (selectedDate < minDate || selectedDate > maxDate) {
                 errorDiv.textContent = '❌ Пожалуйста, выберите дату с 25 декабря 2025 по 07 января 2026.';
-                return; // Не продолжаем, если дата вне диапазона
+                return; 
             }
 
             const displayDate = formatDateToDisplay(dateValue);
@@ -367,23 +356,20 @@
                  errorDiv.textContent = '❌ Ошибка формата даты.';
                  return;
             }
-            // --- КОНЕЦ НОВОГО ---
 
             const city = document.getElementById('city').value;
 
-            // --- НОВОЕ: Проверяем, что city выбран ---
+            // --- Проверяем, что city выбран ---
             if (!city) {
                  console.log("updateTimeSlots: Город не выбран.");
                  errorDiv.textContent = '❌ Пожалуйста, выберите город.';
                  return;
             }
-            // --- КОНЕЦ НОВОГО ---
 
             try {
                 // Запрашиваем все временные слоты с ценами и доступностью с сервера
                 const res = await fetch(`/api/time_slots?date=${encodeURIComponent(displayDate)}&city=${encodeURIComponent(city)}&program_type=${encodeURIComponent(program.value)}`);
                 if (!res.ok) {
-                    // --- ИСПРАВЛЕНО: Более точное сообщение об ошибке ---
                     let errorMessage = `Ошибка API: ${res.status}`;
                     try {
                         // Пробуем получить тело ошибки от сервера
@@ -396,7 +382,6 @@
                         console.error("Не удалось распарсить тело ошибки от сервера:", e);
                     }
                     throw new Error(errorMessage);
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                 }
                 const data = await res.json();
 
@@ -421,7 +406,7 @@
                 html += '</div>';
                 timeSlotsContainer.innerHTML = html;
 
-                // Добавляем обработчики для кнопок времени
+                // Обработчики для кнопок времени
                 document.querySelectorAll('.time-slot-btn:not(.unavailable)').forEach(btn => {
                     btn.addEventListener('click', function() {
                         // Убираем активный класс у всех
@@ -544,10 +529,8 @@
             });
 
             if (res.ok) {
-                // --- ОБНОВЛЕНО: ПОКАЗ ID ЗАКАЗА ---
                 document.getElementById('orderIdDisplay').textContent = order_id;
                 document.getElementById('orderIdForBot').textContent = order_id;
-                // ---
                 nextStep(8);
             } else {
                 const result = await res.json();
@@ -558,7 +541,6 @@
         // === ИНИЦИАЛИЗАЦИЯ ===
         window.onload = function() {
             createSnowflakes();
-            // Устанавливаем минимальную и максимальную дату для виджета
             const dateInput = document.getElementById('date');
             dateInput.min = '2025-12-25';
             dateInput.max = '2026-01-07';
@@ -566,3 +548,4 @@
     </script>
 </body>
 </html>
+
