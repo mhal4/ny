@@ -20,8 +20,8 @@ import json
 import uuid
 
 # === КОНФИГУРАЦИЯ ===
-BOT_TOKEN = "8406739433:AAGyexTjkz8yqBsiY-b8ItlEyrFEux9PohI"  # ← ВСТАВЬ СВОЙ ТОКЕН!
-ADMIN_CHAT_ID = 1062092565  # ← ТВОЙ TELEGRAM ID
+BOT_TOKEN = "8406739433:AAGyexTjkz8yqBsiY-b8ItlEyrFEux9PohI"  
+ADMIN_CHAT_ID = 1062092565  
 EXCEL_FILE = "orders.xlsx"  # Файл с оплаченными заказами
 TEMP_ORDERS_FILE = "temp_orders.json"  # Временные заказы до оплаты
 USER_ORDERS_FILE = "user_orders.json"  # Связь chat_id пользователя и order_id
@@ -189,25 +189,24 @@ def get_price(date_str, time_str, program_type):
         else:
             dt = datetime.strptime(date_str, "%m/%d/%Y")
 
-        # Извлекаем час из time_str
         time_parts = time_str.split(":")
         if len(time_parts) < 2:
             print(f"Ошибка: Неверный формат времени '{time_str}'")
             return 0
         hour = int(time_parts[0])
 
-        # Цены для Экспресса (10 мин) — условно из фото
+        # Цены для Экспресса (10 мин) 
         if program_type == "Экспресс (10 мин)":
             return round(5000 * sale)
 
-        # Цены для Стандарта (30 мин) — как "классика" из текста
+        # Цены для Стандарта (30 мин)
         elif program_type == "Стандарт (30 мин)":
             if dt < datetime(2025, 12, 25):
                 return round(7400 * sale)
             elif dt <= datetime(2025, 12, 27):
                 return round(8000 * sale)
             elif dt == datetime(2025, 12, 28):
-                return round(8400 * sale)  # Исправлено: 8000 -> 8400
+                return round(8400 * sale)  
             elif dt == datetime(2025, 12, 29):
                 return round(6525 * sale)
             elif dt == datetime(2025, 12, 30):
@@ -223,14 +222,14 @@ def get_price(date_str, time_str, program_type):
                     return round(15150 * sale)
                 elif 21 <= hour < 23:
                     return round(16050 * sale)
-                elif 23 <= hour:  # 23:00-00:00 31 декабря
+                elif 23 <= hour:  
                     return round(26250 * sale)
-            elif dt.month == 1 and dt.day == 1:  # 1 января
-                if 0 <= hour < 3:  # 00:00-02:59
-                    return round((150000 / 2) * sale)  # Цена за 1 час -> 30 мин
-                elif 3 <= hour < 6:  # 03:00-05:59
-                    return round((90000 / 2) * sale)  # Цена за 1 час -> 30 мин
-                elif dt.day in [1, 2]:  # 06:00 и далее 1 и 2 января
+            elif dt.month == 1 and dt.day == 1: 
+                if 0 <= hour < 3:  
+                    return round((150000 / 2) * sale) 
+                elif 3 <= hour < 6:  
+                    return round((90000 / 2) * sale)  
+                elif dt.day in [1, 2]:  
                     return round(8500 * sale)
                 elif 3 <= dt.day <= 7:
                     return round(7400 * sale)
@@ -243,28 +242,28 @@ def get_price(date_str, time_str, program_type):
             else:
                 return round(7000 * sale)
 
-        # Цены для Расширенного (1 час) — условно выше
+        # Цены для Расширенного (1 час) 
         elif program_type == "Расширенный (1 час)":
             if dt < datetime(2025, 12, 25):
                 return round(17000 * sale)
-            elif dt <= datetime(2025, 12, 28):  # 25, 26, 27, 28
+            elif dt <= datetime(2025, 12, 28):  
                 return round(17000 * sale)
-            elif dt <= datetime(2025, 12, 30):  # 29, 30
+            elif dt <= datetime(2025, 12, 30):  
                 return round(22500 * sale)
-            elif dt == datetime(2025, 12, 31):  # 31 декабря
+            elif dt == datetime(2025, 12, 31):  
                 return round(50000 * sale)
-            elif dt.month == 1 and dt.day == 1:  # 1 января
-                if 0 <= hour < 3:  # 00:00-02:59
+            elif dt.month == 1 and dt.day == 1:  
+                if 0 <= hour < 3:  
                     return round(150000 * sale)
-                elif 3 <= hour < 6:  # 03:00-05:59
+                elif 3 <= hour < 6:  
                     return round(90000 * sale)
-                else:  # 09:00-23:59
-                    return round(16000 * sale)  # "С 1 -3 января 16000"
-            elif dt.month == 1 and dt.day in [2]:  # 2 января
+                else:  
+                    return round(16000 * sale) 
+            elif dt.month == 1 and dt.day in [2]:  
                 return round(16000 * sale)
-            elif dt.month == 1 and dt.day in [3]:  # 3 января
+            elif dt.month == 1 and dt.day in [3]:  
                 return round(16000 * sale)
-            elif dt.month == 1 and 3 < dt.day <= 7:  # 4, 5, 6, 7 января
+            elif dt.month == 1 and 3 < dt.day <= 7:  
                 return round(12000 * sale)
             else:
                 return round(17000 * sale)
@@ -383,13 +382,13 @@ def get_time_slots_keyboard(date_str, city, program_type):
 
     # Список часов для генерации слотов
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [22, 23]  # 23:00-00:00
-    night_hours_1st = [0, 1, 2, 3, 4, 5]  # 00:00-01:00, 01:00-02:00, ..., 05:00-06:00
+    night_hours_31 = [22, 23]  
+    night_hours_1st = [0, 1, 2, 3, 4, 5]  
 
     hours_to_generate = standard_hours[:]
     if dt.date() == datetime(2025, 12, 31).date():
         hours_to_generate.extend(night_hours_31)
-    elif dt.date() == datetime(2026, 1, 1).date():  # 1 января
+    elif dt.date() == datetime(2026, 1, 1).date():  
         hours_to_generate.extend(night_hours_1st)
 
     for hour in hours_to_generate:
@@ -399,7 +398,7 @@ def get_time_slots_keyboard(date_str, city, program_type):
         available_count = max_slots - booked_count
         price = get_price(
             date_str, time_str, program_type
-        )  # Передаём актуальный program_type
+        )  
 
         if available_count > 0:
             kb.button(
@@ -531,8 +530,6 @@ async def handle_message(message: Message, state: FSMContext):
     # Проверяем, является ли отправитель админом
     if message.from_user.id == ADMIN_CHAT_ID:
         # Команды админа, кроме /add_manager, обрабатываются отдельно
-        # или можно проверить здесь, если не хочется отдельный хендлер
-        # Но /add_manager уже обработан выше как команда
         # Проверяем, начинается ли сообщение с /reply_to
         if message.text.startswith("/reply_to"):
             # /reply_to 123456789 тут текст ответа
@@ -598,7 +595,7 @@ async def handle_message(message: Message, state: FSMContext):
             await message.answer(
                 "❌ Неизвестно, кому отвечать. Напишите сначала ID клиента или используйте /reply_to через админа."
             )
-        return  # Выходим, если это менеджер
+        return  
 
     # Если не админ и не менеджер, проверяем, привязан ли чат к заказу
     user_order_id = get_user_order(message.chat.id)
@@ -621,7 +618,6 @@ async def handle_message(message: Message, state: FSMContext):
             except Exception as e:
                 print(f"Ошибка отправки менеджеру {manager_id}: {e}")
     else:
-        # Если нет связи и FSM неактивен, возможно, пользователь просто пишет
         await message.answer("Привет! Используйте /start, чтобы начать.")
 
 
@@ -633,9 +629,7 @@ async def prompt_for_order_id(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-# === ОБНОВЛЁННЫЙ ОБРАБОТЧИК ВВОДА ID ЗАКАЗА ===
-
-
+# === ОБРАБОТЧИК ВВОДА ID ЗАКАЗА ===
 def find_order_by_id(order_id):
     """
     Ищет заказ по ID в temp_orders.json или orders.xlsx
@@ -655,7 +649,6 @@ def find_order_by_id(order_id):
             if not row.empty:
                 return row.iloc[0].to_dict(), "paid"
     return None, None
-    # Сохраняем связь chat_id -> order_id
 
 
 @dp.message(SupportForm.waiting_for_order_id)
@@ -741,7 +734,6 @@ async def select_program(callback: CallbackQuery, state: FSMContext):
     if not program_type:
         return
     await state.update_data(program_type=program_type)
-    # Показываем календарь дат
     await callback.message.edit_text(
         f"🎯 Вы выбрали {program_type}. Теперь выберите дату:",
         reply_markup=get_dates_keyboard(),
@@ -760,8 +752,6 @@ async def select_date(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     city = data["city"]
     program_type = data["program_type"]
-
-    # Генерируем слоты времени с учётом выбранной программы и показом цены
     kb = get_time_slots_keyboard(date_str, city, program_type)
     await callback.message.edit_text(
         f"📅 Вы выбрали {date_str}. Выберите время:", reply_markup=kb
@@ -1003,15 +993,13 @@ async def handle_time_slots(request):
                         status=400,
                     )
 
-    # --- КОНЕЦ НОВОГО ---
-
     booked = get_booked_slots()
     max_slots = CITIES.get(city, 50)
 
     # Список часов для генерации слотов (включая ночные)
     standard_hours = [14, 15, 16, 17, 18, 19, 20, 21]
-    night_hours_31 = [22, 23]  # 22:00-00:00
-    night_hours_1st = [0, 1, 2, 3, 4, 5]  # 00:00-01:00, 01:00-02:00, ..., 05:00-06:00
+    night_hours_31 = [22, 23]  
+    night_hours_1st = [0, 1, 2, 3, 4, 5]  
 
     hours_to_generate = standard_hours[:]
     if dt.date() == datetime(2025, 12, 31).date():
@@ -1039,9 +1027,6 @@ async def handle_time_slots(request):
     return web.json_response({"slots": slots})
 
 
-# --- КОНЕЦ НОВОГО ЭНДПОИНТА ---
-
-
 async def handle_download(request):
     """
     Скачивание Excel-файла
@@ -1064,7 +1049,7 @@ async def web_app():
     app.router.add_post("/api/temp_order", handle_temp_order)
     app.router.add_post("/api/confirm_order", handle_confirm_order)
     app.router.add_get("/api/price", handle_price)
-    app.router.add_get("/api/time_slots", handle_time_slots)  # <-- НОВЫЙ ЭНДПОИНТ
+    app.router.add_get("/api/time_slots", handle_time_slots)  
     app.router.add_get("/download", handle_download)
     app.router.add_get("/", handle_index)
     return app
@@ -1078,8 +1063,8 @@ async def main():
     site = web.TCPSite(runner, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
     await site.start()
 
-    print(f"🌐 Веб-сервер запущен на http://0.0.0.0:8080")
-    print(f"📥 Скачать Excel: http://твой-сайт.onrender.com/download")
+    print(f" Веб-сервер запущен на http://0.0.0.0:8080")
+    print(f" Скачать Excel: http://сайт.onrender.com/download")
 
     await dp.start_polling(bot)
 
@@ -1105,27 +1090,28 @@ if __name__ == "__main__":
                 "Пожелания",
             ]
         ).to_excel(EXCEL_FILE, index=False)
-        print(f"✅ Создан файл {EXCEL_FILE}")
+        print(f" Создан файл {EXCEL_FILE}")
 
     if not os.path.exists(TEMP_ORDERS_FILE):
         with open(TEMP_ORDERS_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f)
-        print(f"✅ Создан файл {TEMP_ORDERS_FILE}")
+        print(f" Создан файл {TEMP_ORDERS_FILE}")
 
     # Создаём файлы для поддержки, если их нет
     if not os.path.exists(USER_ORDERS_FILE):
         with open(USER_ORDERS_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f)
-        print(f"✅ Создан файл {USER_ORDERS_FILE}")
+        print(f" Создан файл {USER_ORDERS_FILE}")
 
     if not os.path.exists(MANAGERS_FILE):
         with open(MANAGERS_FILE, "w", encoding="utf-8") as f:
             json.dump([], f)  # Массив chat_id
-        print(f"✅ Создан файл {MANAGERS_FILE}")
+        print(f" Создан файл {MANAGERS_FILE}")
 
     if not os.path.exists(LAST_CLIENT_CHAT_FILE):
         with open(LAST_CLIENT_CHAT_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f)
-        print(f"✅ Создан файл {LAST_CLIENT_CHAT_FILE}")
+        print(f" Создан файл {LAST_CLIENT_CHAT_FILE}")
 
     asyncio.run(main())
+
